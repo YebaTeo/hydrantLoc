@@ -11,19 +11,32 @@ import SwiftUI
 struct HydrantMarker: View {
     // Green means usable; red means unusable.
     let isUsable: Bool
+    var isSelected = false
 
     var body: some View {
         ZStack {
             Circle()
-                .fill(isUsable ? Color.green : Color.red)
-                .frame(width: 20, height: 20)
+                .fill(markerColor)
+                .frame(width: markerSize, height: markerSize)
             Circle()
-                .stroke(.white, lineWidth: 3)
-                .frame(width: 20, height: 20)
+                .stroke(.white, lineWidth: isSelected ? 4 : 3)
+                .frame(width: markerSize, height: markerSize)
             Image(systemName: "drop.fill")
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: isSelected ? 12 : 9, weight: .bold))
                 .foregroundStyle(.white)
         }
-        .shadow(radius: 2, y: 1)
+        .shadow(radius: isSelected ? 5 : 2, y: 1)
+        .scaleEffect(isSelected ? 1.2 : 1)
+    }
+
+    private var markerColor: Color {
+        if isSelected {
+            return .blue
+        }
+        return isUsable ? .green : .red
+    }
+
+    private var markerSize: CGFloat {
+        isSelected ? 26 : 20
     }
 }
