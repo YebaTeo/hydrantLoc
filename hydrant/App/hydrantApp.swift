@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct hydrantApp: App {
+
     var body: some Scene {
+
         WindowGroup {
-            HomeView()
+            RootView()
         }
     }
 }
