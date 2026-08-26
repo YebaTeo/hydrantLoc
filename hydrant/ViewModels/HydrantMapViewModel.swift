@@ -14,13 +14,19 @@ import SwiftUI
 @Observable
 final class HydrantMapViewModel {
     var hydrants: [Hydrant]
+    var fireIncidents: [FireIncident]
     var cameraPosition: MapCameraPosition
     var selectedHydrant: Hydrant?
     var searchText = ""
     var statusFilter: HydrantStatusFilter = .usable
+    var mapMode: MapMode = .explore
 
-    init(hydrants: [Hydrant] = HydrantStore.load()) {
+    init(
+        hydrants: [Hydrant] = HydrantStore.load(),
+        fireIncidents: [FireIncident] = FireIncidentStore.load()
+    ) {
         self.hydrants = hydrants
+        self.fireIncidents = fireIncidents
         cameraPosition = .region(HydrantMapDefaults.jakartaRegion)
     }
 
@@ -81,9 +87,13 @@ final class HydrantMapViewModel {
 
     // Moves the map camera to the user's location; a smaller span zooms in more.
     func updateCamera(to location: CLLocation, span: Double = 0.035) {
+        moveCamera(to: location.coordinate, span: span)
+    }
+
+    func moveCamera(to coordinate: CLLocationCoordinate2D, span: Double) {
         cameraPosition = .region(
             MKCoordinateRegion(
-                center: location.coordinate,
+                center: coordinate,
                 span: MKCoordinateSpan(latitudeDelta: span, longitudeDelta: span)
             )
         )

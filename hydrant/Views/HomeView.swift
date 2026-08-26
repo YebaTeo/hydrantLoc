@@ -1,14 +1,22 @@
 import MapKit
 import SwiftUI
 
-// App start screen: a full-screen map of available hydrants centered on the
-// user's current location, with a floating panel docked at the bottom.
 struct HomeView: View {
     @State private var viewModel = HydrantMapViewModel()
     @State private var locationProvider = LocationProvider()
+    @State private var hasCenteredOnUser = false
+    @State private var shouldFocusOnNextLocation = false
+    @State private var showMapModeSheet = false
+    @State private var sheetDetent: PresentationDetent = .height(140)
+
+    private var isLocating: Bool {
+        !hasCenteredOnUser
+        && locationProvider.authorizationStatus != .denied
+        && locationProvider.authorizationStatus != .restricted
+    }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack(alignment: .bottomTrailing) {
             Map(position: $viewModel.cameraPosition) {
                 ForEach(viewModel.availableHydrants) { hydrant in
                     Annotation(hydrant.title, coordinate: hydrant.coordinate) {
@@ -17,49 +25,113 @@ struct HomeView: View {
                     }
                 }
 
+                ForEach(viewModel.fireIncidents) { incident in
+                    Annotation(incident.title, coordinate: incident.coordinate) {
+                        FireMarker()
+                            .accessibilityLabel("Kebakaran, \(incident.title)")
+                    }
+                }
+
                 UserAnnotation()
             }
-            .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-            .mapControls {
-                MapUserLocationButton()
-                MapCompass()
-            }
+            .mapStyle(viewModel.mapMode.mapStyle)
             .ignoresSafeArea()
 
-            floatingPanel
+            mapControls
+                .padding(.horizontal)
+                .padding(.bottom, 152)
+        }
+        .overlay(alignment: .top) {
+            if isLocating {
+                locatingIndicator
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .onAppear {
             locationProvider.requestAuthorization()
         }
         .onChange(of: locationProvider.currentLocation) { _, location in
             guard let location else { return }
-            viewModel.updateCamera(to: location, span: 0.008)
+            if !hasCenteredOnUser {
+                focus(on: location.coordinate)
+                withAnimation(.easeInOut) { hasCenteredOnUser = true }
+            } else if shouldFocusOnNextLocation {
+                shouldFocusOnNextLocation = false
+                focus(on: location.coordinate)
+            }
+        }
+        .sheet(isPresented: .constant(true)) {
+            FireListSheet(
+                incidents: viewModel.fireIncidents,
+                mapMode: $viewModel.mapMode,
+                showMapModeSheet: $showMapModeSheet,
+                onSelect: select
+            )
+            .presentationDetents([.height(140), .medium, .large], selection: $sheetDetent)
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .interactiveDismissDisabled()
         }
     }
 
-    // Placeholder floating section, styled like the hydrant detail sheet.
-    private var floatingPanel: some View {
-        VStack(spacing: 12) {
-            Capsule()
-                .fill(.secondary)
-                .frame(width: 40, height: 5)
-                .padding(.top, 8)
-
-            VStack(spacing: 6) {
-                Text("Panel")
-                    .font(.headline)
-                Text("Konten akan ditambahkan di sini.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 20)
+    private var locatingIndicator: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text("Mencari lokasi Anda…")
+                .font(.subheadline.weight(.medium))
         }
-        .frame(maxWidth: .infinity)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-        .shadow(radius: 8, y: 2)
-        .padding(.horizontal)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.regularMaterial, in: Capsule())
+        .shadow(radius: 4, y: 2)
+        .padding(.top, 8)
+    }
+
+    private var mapControls: some View {
+        VStack(spacing: 0) {
+            Button {
+                showMapModeSheet = true
+            } label: {
+                controlIcon(viewModel.mapMode.systemImage)
+            }
+            .accessibilityLabel("Mode peta")
+
+            Divider().frame(width: 44)
+
+            Button(action: focusOnUser) {
+                controlIcon("location.fill")
+            }
+            .accessibilityLabel("Fokus ke lokasi saya")
+        }
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .shadow(radius: 6, y: 2)
+    }
+
+    private func controlIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 18, weight: .medium))
+            .frame(width: 44, height: 44)
+    }
+
+    private func focusOnUser() {
+        if let location = locationProvider.currentLocation {
+            focus(on: location.coordinate)
+        } else {
+            shouldFocusOnNextLocation = true
+            locationProvider.requestLocation()
+        }
+    }
+
+    private func select(_ incident: FireIncident) {
+        withAnimation { sheetDetent = .height(140) }
+        focus(on: incident.coordinate, span: 0.006)
+    }
+
+    private func focus(on coordinate: CLLocationCoordinate2D, span: Double = 0.008) {
+        withAnimation(.easeInOut(duration: 0.9)) {
+            viewModel.moveCamera(to: coordinate, span: span)
+        }
     }
 }
 
