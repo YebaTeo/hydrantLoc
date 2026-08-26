@@ -12,13 +12,9 @@ import Observation
 // Wraps Core Location so SwiftUI views can observe location and permission changes.
 @Observable
 final class LocationProvider: NSObject, CLLocationManagerDelegate {
-    // Apple location manager used to request permission and one-time location updates.
     private let manager = CLLocationManager()
 
-    // Latest known user location, used for nearest hydrant and distance display.
     var currentLocation: CLLocation?
-
-    // Current permission state for location access.
     var authorizationStatus: CLAuthorizationStatus
 
     override init() {
@@ -44,7 +40,6 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    // Requests the user's current location when permission allows it.
     func requestLocation() {
         guard canRequestLocation else { return }
 
@@ -65,7 +60,6 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
         Bundle.main.object(forInfoDictionaryKey: "NSLocationWhenInUseUsageDescription") != nil
     }
 
-    // Updates stored permission state whenever the user changes location access.
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
         if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
@@ -73,12 +67,10 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    // Saves the newest location returned by Core Location.
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         currentLocation = locations.last
     }
 
-    // Clears the stored location when Core Location cannot provide one.
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         currentLocation = nil
     }

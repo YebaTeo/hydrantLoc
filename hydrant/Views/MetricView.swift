@@ -9,10 +9,7 @@ import SwiftUI
 
 // Compact count-and-label display used in the map status bar.
 struct MetricView: View {
-    // Main number shown in larger text.
     let value: String
-
-    // Short label shown below the number.
     let label: String
 
     var body: some View {

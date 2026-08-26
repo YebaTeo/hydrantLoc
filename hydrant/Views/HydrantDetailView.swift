@@ -10,16 +10,10 @@ import SwiftUI
 
 // Sheet view that shows detailed information for one selected hydrant.
 struct HydrantDetailView: View {
-    // Hydrant selected from the map.
     let hydrant: Hydrant
-
-    // User location used to calculate distance, if available.
     let userLocation: CLLocation?
-
-    // Action provided by the parent view to open Apple Maps navigation.
     let openDirections: () -> Void
 
-    // Formats the distance from the user to the hydrant for display.
     private var distanceText: String? {
         guard let userLocation else { return nil }
         let distance = hydrant.location.distance(from: userLocation)
@@ -30,7 +24,6 @@ struct HydrantDetailView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Shows condition, distance, and administrative area.
                 Section {
                     LabeledContent("Kondisi") {
                         Text(hydrant.kondisi.capitalized)
@@ -44,12 +37,10 @@ struct HydrantDetailView: View {
                     LabeledContent("Kelurahan", value: hydrant.kelurahan.capitalized)
                 }
 
-                // Shows the full hydrant address.
                 Section("Alamat") {
                     Text(hydrant.alamat.capitalized)
                 }
 
-                // Opens the selected hydrant in Apple Maps.
                 Section {
                     Button(action: openDirections) {
                         Label("Navigasi Apple Maps", systemImage: "arrow.triangle.turn.up.right.diamond.fill")

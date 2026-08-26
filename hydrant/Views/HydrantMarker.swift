@@ -7,9 +7,8 @@
 
 import SwiftUI
 
-// Small map marker that changes color based on hydrant condition.
+// Map marker tinted green when usable and red when unusable.
 struct HydrantMarker: View {
-    // Green means usable; red means unusable.
     let isUsable: Bool
 
     var body: some View {

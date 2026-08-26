@@ -13,19 +13,10 @@ import SwiftUI
 // Stores map screen state and handles filtering, selection, and camera updates.
 @Observable
 final class HydrantMapViewModel {
-    // Full hydrant dataset loaded from the app bundle.
     var hydrants: [Hydrant]
-
-    // Current visible map region/camera position.
     var cameraPosition: MapCameraPosition
-
-    // Hydrant currently shown in the detail sheet.
     var selectedHydrant: Hydrant?
-
-    // Search text entered by the user.
     var searchText = ""
-
-    // Selected status filter for the map markers.
     var statusFilter: HydrantStatusFilter = .usable
 
     init(hydrants: [Hydrant] = HydrantStore.load()) {
@@ -44,12 +35,14 @@ final class HydrantMapViewModel {
         }
     }
 
-    // Number of hydrants marked usable.
+    var availableHydrants: [Hydrant] {
+        hydrants.filter(\.isUsable)
+    }
+
     var usableCount: Int {
         hydrants.filter(\.isUsable).count
     }
 
-    // Number of hydrants marked unusable.
     var unusableCount: Int {
         hydrants.count - usableCount
     }
@@ -86,12 +79,12 @@ final class HydrantMapViewModel {
         return false
     }
 
-    // Moves the map camera to the user's current location.
-    func updateCamera(to location: CLLocation) {
+    // Moves the map camera to the user's location; a smaller span zooms in more.
+    func updateCamera(to location: CLLocation, span: Double = 0.035) {
         cameraPosition = .region(
             MKCoordinateRegion(
                 center: location.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.035, longitudeDelta: 0.035)
+                span: MKCoordinateSpan(latitudeDelta: span, longitudeDelta: span)
             )
         )
     }
