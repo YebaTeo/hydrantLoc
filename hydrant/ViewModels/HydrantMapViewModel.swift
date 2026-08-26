@@ -41,6 +41,11 @@ final class HydrantMapViewModel {
         Array(hydrantRecommendations.prefix(displayedRecommendationLimit))
     }
 
+    // Development HomeView uses this lightweight list for available hydrant markers.
+    var availableHydrants: [Hydrant] {
+        hydrants.filter(\.isUsable)
+    }
+
     // Applies the selected filter to the full hydrant list.
     var filteredHydrants: [Hydrant] {
         hydrants.filter { hydrant in
@@ -189,11 +194,11 @@ final class HydrantMapViewModel {
     }
 
     // Moves the map camera to the user's current location.
-    func updateCamera(to location: CLLocation) {
+    func updateCamera(to location: CLLocation, span: CLLocationDegrees = 0.035) {
         cameraPosition = .region(
             MKCoordinateRegion(
                 center: location.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.035, longitudeDelta: 0.035)
+                span: MKCoordinateSpan(latitudeDelta: span, longitudeDelta: span)
             )
         )
     }

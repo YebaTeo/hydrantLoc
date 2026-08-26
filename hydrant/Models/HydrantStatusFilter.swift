@@ -13,10 +13,8 @@ enum HydrantStatusFilter: String, CaseIterable, Identifiable {
     case usable
     case unusable
 
-    // Uses the enum case itself as the SwiftUI identity.
     var id: Self { self }
 
-    // User-facing label for each filter option.
     var title: String {
         switch self {
         case .all:
@@ -28,7 +26,6 @@ enum HydrantStatusFilter: String, CaseIterable, Identifiable {
         }
     }
 
-    // Returns true when a hydrant should appear for the selected filter.
     func includes(_ hydrant: Hydrant) -> Bool {
         switch self {
         case .all:
