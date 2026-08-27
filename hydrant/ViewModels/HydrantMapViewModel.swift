@@ -30,6 +30,12 @@ final class HydrantMapViewModel {
     // Selected status filter for the map markers.
     var statusFilter: HydrantStatusFilter = .usable
 
+    // Selected hydrant for direct map inspection.
+    var selectedHydrant: Hydrant?
+
+    // Standard vs. satellite map appearance.
+    var mapStyleMode: MapStyleMode = .standard
+
     private let recommendationCandidateLimit = 8
     private let displayedRecommendationLimit = 5
     
@@ -79,13 +85,7 @@ final class HydrantMapViewModel {
         guard let distance = distanceFromIncident(to: hydrant) else {
             return "-"
         }
-        if distance < 1000 {
-            return "\(Int(distance)) m"
-        }
-        return String(
-            format: "%.1f km",
-            distance / 1000
-        )
+        return DistanceFormatting.distance(distance)
     }
     @MainActor
     func updateHydrantRecommendations(
@@ -128,39 +128,46 @@ final class HydrantMapViewModel {
         print("Evaluating \(candidates.count) usable hydrant candidates...")
 
         var evaluatedRecommendations: [HydrantRecommendation] = []
-        for candidate in candidates {
-            var drivingDistance: CLLocationDistance?
-            var expectedTravelTime: TimeInterval?
-
-            if let firefighterLocation {
-                do {
-                    let metrics = try await routeService.calculateRouteMetrics(
-                        from: firefighterLocation.coordinate,
-                        to: candidate.hydrant.coordinate
-                    )
-                    drivingDistance = metrics.distance
-                    expectedTravelTime = metrics.expectedTravelTime
-                } catch {
-                    print("⚠️ No route for \(candidate.hydrant.title): \(error)")
+        if let firefighterLocation {
+            let candidatesArray = Array(candidates)
+            evaluatedRecommendations = await withTaskGroup(of: (HydrantRecommendation, Int).self) { group in
+                for (index, candidate) in candidatesArray.enumerated() {
+                    group.addTask {
+                        var drivingDistance: CLLocationDistance?
+                        var expectedTravelTime: TimeInterval?
+                        do {
+                            let metrics = try await routeService.calculateRouteMetrics(
+                                from: firefighterLocation.coordinate,
+                                to: candidate.hydrant.coordinate
+                            )
+                            drivingDistance = metrics.distance
+                            expectedTravelTime = metrics.expectedTravelTime
+                        } catch {
+                            print("⚠️ No route for \(candidate.hydrant.title): \(error)")
+                        }
+                        let recommendation = HydrantRecommendation(
+                            hydrant: candidate.hydrant,
+                            incidentDistance: candidate.incidentDistance,
+                            drivingDistance: drivingDistance,
+                            expectedTravelTime: expectedTravelTime
+                        )
+                        return (recommendation, index)
+                    }
                 }
+                var results: [(HydrantRecommendation, Int)] = []
+                for await result in group {
+                    results.append(result)
+                }
+                return results.sorted(by: { $0.1 < $1.1 }).map(\.0)
             }
-
-            let recommendation = HydrantRecommendation(
-                hydrant: candidate.hydrant,
-                incidentDistance: candidate.incidentDistance,
-                drivingDistance: drivingDistance,
-                expectedTravelTime: expectedTravelTime
-            )
-            evaluatedRecommendations.append(recommendation)
-
-            print("💧 \(recommendation.hydrant.title)")
-            print("Incident distance: \(formatDistance(recommendation.incidentDistance))")
-            if let drivingDistance = recommendation.drivingDistance,
-               let expectedTravelTime = recommendation.expectedTravelTime {
-                print("Driving distance: \(formatDistance(drivingDistance))")
-                print("ETA: \(formatETA(expectedTravelTime))")
-            } else {
-                print("Driving route: unavailable")
+        } else {
+            evaluatedRecommendations = candidates.map { candidate in
+                HydrantRecommendation(
+                    hydrant: candidate.hydrant,
+                    incidentDistance: candidate.incidentDistance,
+                    drivingDistance: nil,
+                    expectedTravelTime: nil
+                )
             }
         }
 
@@ -193,7 +200,7 @@ final class HydrantMapViewModel {
         isLoadingRecommendations = false
     }
 
-    // Moves the map camera to the user's current location.
+    // Moves the map camera to a location with a specified zoom span.
     func updateCamera(to location: CLLocation, span: CLLocationDegrees = 0.035) {
         cameraPosition = .region(
             MKCoordinateRegion(
@@ -203,25 +210,18 @@ final class HydrantMapViewModel {
         )
     }
 
-    private func formatDistance(_ distance: CLLocationDistance) -> String {
-        if distance < 1000 {
-            return "\(Int(distance.rounded())) m"
+    // Pans the map camera to a location while preserving the user's current zoom scale.
+    func panCamera(to location: CLLocation) {
+        if let currentRegion = cameraPosition.region {
+            cameraPosition = .region(
+                MKCoordinateRegion(
+                    center: location.coordinate,
+                    span: currentRegion.span
+                )
+            )
+        } else {
+            updateCamera(to: location)
         }
-        return String(format: "%.1f km", distance / 1000)
-    }
-
-    private func formatETA(_ travelTime: TimeInterval) -> String {
-        let minutes = Int((travelTime / 60).rounded(.up))
-        if minutes < 60 {
-            return "\(minutes) min"
-        }
-
-        let hours = minutes / 60
-        let remainingMinutes = minutes % 60
-        if remainingMinutes == 0 {
-            return "\(hours) hr"
-        }
-        return "\(hours) hr \(remainingMinutes) min"
     }
 }
 

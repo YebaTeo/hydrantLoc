@@ -10,6 +10,7 @@ import Foundation
 import MapKit
 import Observation
 
+@MainActor
 @Observable
 final class IncidentSearchService: NSObject, MKLocalSearchCompleterDelegate {
     var query = "" {

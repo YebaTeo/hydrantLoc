@@ -13,7 +13,7 @@ import Combine
 final class OnboardingViewModel: ObservableObject {
 
     @Published var selectedRole: UserRole?
-    @Published var selectedTaskForce: TaskForce = .jakartaPusat
+    @Published var selectedTaskForce: TaskForce?
 
     let roles: [UserRole]
     let taskForces: [TaskForce]
@@ -21,18 +21,26 @@ final class OnboardingViewModel: ObservableObject {
     init() {
         self.roles = OnboardingData.roles
         self.taskForces = OnboardingData.taskForces
+        if let savedRole = UserDefaults.standard.string(forKey: "userRole") {
+            self.selectedRole = UserRole(rawValue: savedRole)
+        }
+        if let savedTaskForce = UserDefaults.standard.string(forKey: "userTaskForce") {
+            self.selectedTaskForce = TaskForce(rawValue: savedTaskForce)
+        }
     }
 
     var canContinue: Bool {
-        selectedRole != nil
+        selectedRole != nil && selectedTaskForce != nil
     }
 
     func continueOnboarding() {
-        guard let selectedRole else {
+        guard let selectedRole, let selectedTaskForce else {
             return
         }
 
-        print("Selected Role: \(selectedRole.rawValue)")
-        print("Selected Task Force: \(selectedTaskForce.rawValue)")
+        UserDefaults.standard.set(selectedRole.rawValue, forKey: "userRole")
+        UserDefaults.standard.set(selectedTaskForce.rawValue, forKey: "userTaskForce")
+        print("Saved Selected Role: \(selectedRole.rawValue)")
+        print("Saved Selected Task Force: \(selectedTaskForce.rawValue)")
     }
 }
