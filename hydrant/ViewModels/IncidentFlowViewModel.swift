@@ -24,6 +24,7 @@ final class IncidentFlowViewModel {
     private(set) var route: MKRoute?
     private(set) var routedHydrant: Hydrant?
     var routeErrorMessage: String?
+    var isShowingRemoveIncidentConfirmation = false
 
     // Center of the map while placing an incident pin; confirm reads it.
     var mapCenter: CLLocationCoordinate2D?
@@ -72,7 +73,8 @@ final class IncidentFlowViewModel {
             state = .placingPin
             mapCenter = mapViewModel.cameraPosition.region?.center ?? HydrantMapDefaults.jakartaRegion.center
         case .authorizing(.end):
-            removeSelectedIncident()
+            state = selectedIncident == nil ? .list : .incidentDetail
+            isShowingRemoveIncidentConfirmation = selectedIncident != nil
         default:
             break
         }
@@ -152,6 +154,16 @@ final class IncidentFlowViewModel {
             incidents.removeAll { $0.id == selectedIncident.id }
         }
         closeIncidentDetail()
+    }
+
+    func confirmRemoveIncident() {
+        isShowingRemoveIncidentConfirmation = false
+        removeSelectedIncident()
+    }
+
+    func cancelRemoveIncident() {
+        isShowingRemoveIncidentConfirmation = false
+        state = selectedIncident == nil ? .list : .incidentDetail
     }
 
     // MARK: - Routing

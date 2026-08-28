@@ -44,6 +44,7 @@ struct ContentView: View {
 
     var body: some View {
         @Bindable var mapViewModel = mapViewModel
+        @Bindable var flowVM = flowVM
         NavigationStack {
             ZStack(alignment: .top) {
                 IncidentMapView(
@@ -103,6 +104,19 @@ struct ContentView: View {
                 }
             } message: {
                 Text(flowVM.routeErrorMessage ?? "A driving route to this hydrant could not be found.")
+            }
+            .alert(
+                "Akhiri laporan ini?",
+                isPresented: $flowVM.isShowingRemoveIncidentConfirmation
+            ) {
+                Button("Akhiri Laporan", role: .destructive) {
+                    flowVM.confirmRemoveIncident()
+                }
+                Button("Batalkan", role: .cancel) {
+                    flowVM.cancelRemoveIncident()
+                }
+            } message: {
+                Text("Ini akan menghapus laporan insiden, rekomendasi hidran, dan semua rute yang sedang aktif.")
             }
             .onAppear {
                 locationProvider.requestAuthorization()

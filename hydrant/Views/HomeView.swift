@@ -4,6 +4,8 @@ import SwiftUI
 struct HomeView: View {
     @State private var viewModel = HydrantMapViewModel()
     @State private var locationProvider = LocationProvider()
+    @State private var fireIncidents = FireIncidentStore.load()
+    @State private var mapMode: MapMode = .explore
     @State private var hasCenteredOnUser = false
     @State private var shouldFocusOnNextLocation = false
     @State private var showMapModeSheet = false
@@ -25,7 +27,7 @@ struct HomeView: View {
                     }
                 }
 
-                ForEach(viewModel.fireIncidents) { incident in
+                ForEach(fireIncidents) { incident in
                     Annotation(incident.title, coordinate: incident.coordinate) {
                         FireMarker()
                             .accessibilityLabel("Kebakaran, \(incident.title)")
@@ -34,7 +36,7 @@ struct HomeView: View {
 
                 UserAnnotation()
             }
-            .mapStyle(viewModel.mapMode.mapStyle)
+            .mapStyle(mapMode.mapStyle)
             .ignoresSafeArea()
 
             mapControls
@@ -62,8 +64,8 @@ struct HomeView: View {
         }
         .sheet(isPresented: .constant(true)) {
             FireListSheet(
-                incidents: viewModel.fireIncidents,
-                mapMode: $viewModel.mapMode,
+                incidents: fireIncidents,
+                mapMode: $mapMode,
                 showMapModeSheet: $showMapModeSheet,
                 onSelect: select
             )
@@ -93,7 +95,7 @@ struct HomeView: View {
             Button {
                 showMapModeSheet = true
             } label: {
-                controlIcon(viewModel.mapMode.systemImage)
+                controlIcon(mapMode.systemImage)
             }
             .accessibilityLabel("Mode peta")
 
@@ -130,7 +132,12 @@ struct HomeView: View {
 
     private func focus(on coordinate: CLLocationCoordinate2D, span: Double = 0.008) {
         withAnimation(.easeInOut(duration: 0.9)) {
-            viewModel.moveCamera(to: coordinate, span: span)
+            viewModel.cameraPosition = .region(
+                MKCoordinateRegion(
+                    center: coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: span, longitudeDelta: span)
+                )
+            )
         }
     }
 }
