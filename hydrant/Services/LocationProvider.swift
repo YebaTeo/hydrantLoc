@@ -10,6 +10,7 @@ import Foundation
 import Observation
 
 // Wraps Core Location so SwiftUI views can observe location and permission changes.
+@MainActor
 @Observable
 final class LocationProvider: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
