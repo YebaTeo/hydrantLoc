@@ -209,10 +209,10 @@ private extension OnboardingView {
 
             pickerField(
                 title:
-                    viewModel
-                        .selectedTaskForce
-                        .rawValue,
-                isPlaceholder: false
+                    viewModel.selectedTaskForce?.rawValue
+                    ?? "Select your task force",
+                isPlaceholder:
+                    viewModel.selectedTaskForce == nil
             )
         }
         .buttonStyle(.plain)

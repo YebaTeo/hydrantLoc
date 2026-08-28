@@ -15,89 +15,213 @@ import SwiftUI
 final class HydrantMapViewModel {
     // Full hydrant dataset loaded from the app bundle.
     var hydrants: [Hydrant]
-    var fireIncidents: [FireIncident]
+    
+    // Current visible map region/camera position.
     var cameraPosition: MapCameraPosition
-    var selectedHydrant: Hydrant?
-    var searchText = ""
-    var statusFilter: HydrantStatusFilter = .usable
-    var mapMode: MapMode = .explore
+    
+    // Location of the fire/emergency incident.
+    var incidentCoordinate: CLLocationCoordinate2D?
 
-    init(
-        hydrants: [Hydrant] = HydrantStore.load(),
-        fireIncidents: [FireIncident] = FireIncidentStore.load()
-    ) {
+    // Ranked hydrant recommendations for the current incident.
+    var hydrantRecommendations: [HydrantRecommendation] = []
+    var isLoadingRecommendations = false
+    var recommendationErrorMessage: String?
+    
+    // Selected status filter for the map markers.
+    var statusFilter: HydrantStatusFilter = .usable
+
+    // Selected hydrant for direct map inspection.
+    var selectedHydrant: Hydrant?
+
+    // Standard vs. satellite map appearance.
+    var mapStyleMode: MapStyleMode = .standard
+
+    private let recommendationCandidateLimit = 8
+    private let displayedRecommendationLimit = 5
+    
+    init(hydrants: [Hydrant] = HydrantStore.load()) {
         self.hydrants = hydrants
-        self.fireIncidents = fireIncidents
         cameraPosition = .region(HydrantMapDefaults.jakartaRegion)
     }
-
-    // Applies the selected filter and search text to the full hydrant list.
-    var filteredHydrants: [Hydrant] {
-        hydrants.filter { hydrant in
-            statusFilter.includes(hydrant)
-            && (
-                searchText.isEmpty
-                || hydrant.searchableText.localizedCaseInsensitiveContains(searchText)
-            )
-        }
+    var displayedRecommendations: [HydrantRecommendation] {
+        Array(hydrantRecommendations.prefix(displayedRecommendationLimit))
     }
 
+    // Development HomeView uses this lightweight list for available hydrant markers.
     var availableHydrants: [Hydrant] {
         hydrants.filter(\.isUsable)
     }
 
+    // Applies the selected filter to the full hydrant list.
+    var filteredHydrants: [Hydrant] {
+        hydrants.filter { hydrant in
+            statusFilter.includes(hydrant)
+        }
+    }
+    
+    // Number of hydrants marked usable.
     var usableCount: Int {
         hydrants.filter(\.isUsable).count
     }
-
+    
+    // Number of hydrants marked unusable.
     var unusableCount: Int {
         hydrants.count - usableCount
     }
-
-    // Selects a hydrant and zooms the map around it.
-    func select(_ hydrant: Hydrant) {
-        selectedHydrant = hydrant
-        cameraPosition = .region(
-            MKCoordinateRegion(
-                center: hydrant.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
-            )
+    
+    func distanceFromIncident(to hydrant: Hydrant) -> CLLocationDistance? {
+        guard let incidentCoordinate else {
+            return nil
+        }
+        
+        let incidentLocation = CLLocation(
+            latitude: incidentCoordinate.latitude,
+            longitude: incidentCoordinate.longitude
         )
+        
+        return hydrant.location.distance(from: incidentLocation)
     }
+    func formattedDistanceFromIncident(to hydrant: Hydrant) -> String {
+        guard let distance = distanceFromIncident(to: hydrant) else {
+            return "-"
+        }
+        return DistanceFormatting.distance(distance)
+    }
+    @MainActor
+    func updateHydrantRecommendations(
+        incidentCoordinate: CLLocationCoordinate2D,
+        firefighterLocation: CLLocation?,
+        routeService: RouteService
+    ) async {
+        isLoadingRecommendations = true
+        recommendationErrorMessage = nil
+        hydrantRecommendations = []
 
-    // Finds and selects the closest usable hydrant from the user's current location.
-    func selectNearestUsableHydrant(from currentLocation: CLLocation?) -> Bool {
-        guard let currentLocation else {
-            return false
+        print("🔥 INCIDENT: \(incidentCoordinate.latitude), \(incidentCoordinate.longitude)")
+        if let firefighterLocation {
+            let coordinate = firefighterLocation.coordinate
+            print("🚒 FIREFIGHTER: \(coordinate.latitude), \(coordinate.longitude)")
+        } else {
+            print("🚒 FIREFIGHTER: unavailable")
         }
 
-        let nearest = hydrants
+        let incidentLocation = CLLocation(
+            latitude: incidentCoordinate.latitude,
+            longitude: incidentCoordinate.longitude
+        )
+
+        let candidates = hydrants
             .filter(\.isUsable)
-            .min { lhs, rhs in
-                lhs.location.distance(from: currentLocation) < rhs.location.distance(from: currentLocation)
+            .map { hydrant in
+                HydrantRecommendation(
+                    hydrant: hydrant,
+                    incidentDistance: hydrant.location.distance(from: incidentLocation),
+                    drivingDistance: nil,
+                    expectedTravelTime: nil
+                )
             }
+            .sorted { lhs, rhs in
+                lhs.incidentDistance < rhs.incidentDistance
+            }
+            .prefix(recommendationCandidateLimit)
 
-        if let nearest {
-            statusFilter = .usable
-            select(nearest)
-            return true
+        print("Evaluating \(candidates.count) usable hydrant candidates...")
+
+        var evaluatedRecommendations: [HydrantRecommendation] = []
+        if let firefighterLocation {
+            let candidatesArray = Array(candidates)
+            evaluatedRecommendations = await withTaskGroup(of: (HydrantRecommendation, Int).self) { group in
+                for (index, candidate) in candidatesArray.enumerated() {
+                    group.addTask {
+                        var drivingDistance: CLLocationDistance?
+                        var expectedTravelTime: TimeInterval?
+                        do {
+                            let metrics = try await routeService.calculateRouteMetrics(
+                                from: firefighterLocation.coordinate,
+                                to: candidate.hydrant.coordinate
+                            )
+                            drivingDistance = metrics.distance
+                            expectedTravelTime = metrics.expectedTravelTime
+                        } catch {
+                            print("⚠️ No route for \(candidate.hydrant.title): \(error)")
+                        }
+                        let recommendation = HydrantRecommendation(
+                            hydrant: candidate.hydrant,
+                            incidentDistance: candidate.incidentDistance,
+                            drivingDistance: drivingDistance,
+                            expectedTravelTime: expectedTravelTime
+                        )
+                        return (recommendation, index)
+                    }
+                }
+                var results: [(HydrantRecommendation, Int)] = []
+                for await result in group {
+                    results.append(result)
+                }
+                return results.sorted(by: { $0.1 < $1.1 }).map(\.0)
+            }
+        } else {
+            evaluatedRecommendations = candidates.map { candidate in
+                HydrantRecommendation(
+                    hydrant: candidate.hydrant,
+                    incidentDistance: candidate.incidentDistance,
+                    drivingDistance: nil,
+                    expectedTravelTime: nil
+                )
+            }
         }
 
-        return false
+        // Prefer candidates with valid route data, then shortest ETA, incident distance, and driving distance.
+        hydrantRecommendations = evaluatedRecommendations.sorted { lhs, rhs in
+            switch (lhs.expectedTravelTime, rhs.expectedTravelTime) {
+            case let (lhsETA?, rhsETA?):
+                if lhsETA != rhsETA {
+                    return lhsETA < rhsETA
+                }
+                if lhs.incidentDistance != rhs.incidentDistance {
+                    return lhs.incidentDistance < rhs.incidentDistance
+                }
+                return (lhs.drivingDistance ?? .greatestFiniteMagnitude)
+                    < (rhs.drivingDistance ?? .greatestFiniteMagnitude)
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            case (nil, nil):
+                return lhs.incidentDistance < rhs.incidentDistance
+            }
+        }
+
+        print("✅ Hydrant recommendation ranking complete")
+        for (index, recommendation) in displayedRecommendations.enumerated() {
+            print("\(index + 1). \(recommendation.hydrant.title)")
+        }
+
+        isLoadingRecommendations = false
     }
 
-    // Moves the map camera to the user's location; a smaller span zooms in more.
-    func updateCamera(to location: CLLocation, span: Double = 0.035) {
-        moveCamera(to: location.coordinate, span: span)
-    }
-
-    func moveCamera(to coordinate: CLLocationCoordinate2D, span: Double) {
+    // Moves the map camera to a location with a specified zoom span.
+    func updateCamera(to location: CLLocation, span: CLLocationDegrees = 0.035) {
         cameraPosition = .region(
             MKCoordinateRegion(
-                center: coordinate,
+                center: location.coordinate,
                 span: MKCoordinateSpan(latitudeDelta: span, longitudeDelta: span)
             )
         )
+    }
+
+    // Pans the map camera to a location while preserving the user's current zoom scale.
+    func panCamera(to location: CLLocation) {
+        if let currentRegion = cameraPosition.region {
+            cameraPosition = .region(
+                MKCoordinateRegion(
+                    center: location.coordinate,
+                    span: currentRegion.span
+                )
+            )
+        } else {
+            updateCamera(to: location)
+        }
     }
 }
 
