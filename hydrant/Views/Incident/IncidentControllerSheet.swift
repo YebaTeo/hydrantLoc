@@ -5,10 +5,11 @@
 
 import SwiftUI
 
-// The single persistent bottom sheet that steers the whole app. It renders the
-// panel for the current workflow step and wires panel intents to the flow view
-// model. This replaces the five separate, ephemeral sheets the old flow used.
+// The single persistent bottom sheet that steers the whole app.
+// It renders the panel for the current workflow step and wires
+// panel intents to the flow view model.
 struct IncidentControllerSheet: View {
+
     var mapViewModel: HydrantMapViewModel
     var flowVM: IncidentFlowViewModel
     var locationProvider: LocationProvider
@@ -27,29 +28,28 @@ struct IncidentControllerSheet: View {
             } else {
                 IncidentListPanel(
                     incidents: flowVM.incidents,
+                    canAddIncident: flowVM.canManageIncidents,
                     onAddIncident: flowVM.addIncident,
                     onSelectIncident: { incident in
                         flowVM.openIncident(
                             incident,
-                            firefighterLocation: locationProvider.currentLocation
+                            firefighterLocation:
+                                locationProvider.currentLocation
                         )
                     }
                 )
             }
 
-        case .authorizing(let purpose):
-            IncidentAuthorizationView(
-                title: purpose == .end ? "Hapus Laporan" : "Command Center Authorization",
-                message: purpose == .end ? "Masukkan kode 4-digit untuk menghapus laporan ini" : "Masukkan kode incident 4-digit",
-                onAuthorized: flowVM.authorizationDidSucceed,
-                onCancel: flowVM.authorizationDidCancel
-            )
-
         case .placingPin:
             PlacingPinPanel(
                 mapCenter: flowVM.mapCenter,
                 onSelectSearchResult: flowVM.recenterOnSearchResult,
-                onConfirm: { flowVM.confirmPinnedLocation(firefighterLocation: locationProvider.currentLocation) },
+                onConfirm: {
+                    flowVM.confirmPinnedLocation(
+                        firefighterLocation:
+                            locationProvider.currentLocation
+                    )
+                },
                 onCancel: flowVM.cancelPlacingPin
             )
 
@@ -58,7 +58,9 @@ struct IncidentControllerSheet: View {
                 NearbyHydrantsPanel(
                     mapViewModel: mapViewModel,
                     incident: incident,
+                    selectedHydrant: flowVM.routedHydrant,
                     isExpanded: isExpanded,
+                    canRemoveIncident: flowVM.canManageIncidents,
                     onSelectHydrant: { flowVM.selectHydrant($0, firefighterLocation: locationProvider.currentLocation) },
                     onClose: flowVM.closeIncidentDetail,
                     onRemoveIncident: flowVM.requestRemoveIncident

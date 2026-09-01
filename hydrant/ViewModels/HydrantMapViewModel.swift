@@ -24,6 +24,7 @@ final class HydrantMapViewModel {
 
     // Ranked hydrant recommendations for the current incident.
     var hydrantRecommendations: [HydrantRecommendation] = []
+    var recommendedHydrantRoutes: [RecommendedHydrantRoute] = []
     var isLoadingRecommendations = false
     var recommendationErrorMessage: String?
     
@@ -96,6 +97,7 @@ final class HydrantMapViewModel {
         isLoadingRecommendations = true
         recommendationErrorMessage = nil
         hydrantRecommendations = []
+        recommendedHydrantRoutes = []
 
         print("🔥 INCIDENT: \(incidentCoordinate.latitude), \(incidentCoordinate.longitude)")
         if let firefighterLocation {
@@ -132,18 +134,20 @@ final class HydrantMapViewModel {
             let candidatesArray = Array(candidates)
             evaluatedRecommendations = await withTaskGroup(of: (HydrantRecommendation, Int).self) { group in
                 for (index, candidate) in candidatesArray.enumerated() {
+                    let hydrantCoordinate = candidate.hydrant.coordinate
+                    let hydrantTitle = candidate.hydrant.title
                     group.addTask {
                         var drivingDistance: CLLocationDistance?
                         var expectedTravelTime: TimeInterval?
                         do {
                             let metrics = try await routeService.calculateRouteMetrics(
                                 from: firefighterLocation.coordinate,
-                                to: candidate.hydrant.coordinate
+                                to: hydrantCoordinate
                             )
                             drivingDistance = metrics.distance
                             expectedTravelTime = metrics.expectedTravelTime
                         } catch {
-                            print("⚠️ No route for \(candidate.hydrant.title): \(error)")
+                            print("⚠️ No route for \(hydrantTitle): \(error)")
                         }
                         let recommendation = HydrantRecommendation(
                             hydrant: candidate.hydrant,
@@ -200,6 +204,68 @@ final class HydrantMapViewModel {
         isLoadingRecommendations = false
     }
 
+    @MainActor
+    func updateRecommendedHydrantRoutes(
+        incidentCoordinate: CLLocationCoordinate2D,
+        routeService: RouteService
+    ) async {
+        let recommendations = displayedRecommendations
+        guard !recommendations.isEmpty else {
+            recommendedHydrantRoutes = []
+            return
+        }
+
+        let routes = await withTaskGroup(of: RecommendedHydrantRoute?.self) { group in
+            for recommendation in recommendations {
+                let hydrantID = recommendation.id
+                let hydrantCoordinate = recommendation.hydrant.coordinate
+                let hydrantTitle = recommendation.hydrant.title
+                group.addTask {
+                    do {
+                        let route = try await routeService.calculateRoute(
+                            from: incidentCoordinate,
+                            to: hydrantCoordinate
+                        )
+                        return RecommendedHydrantRoute(
+                            hydrantID: hydrantID,
+                            route: route
+                        )
+                    } catch {
+                        print("⚠️ No incident route for \(hydrantTitle): \(error)")
+                        return nil
+                    }
+                }
+            }
+
+            var calculatedRoutes: [RecommendedHydrantRoute] = []
+            for await route in group {
+                if let route {
+                    calculatedRoutes.append(route)
+                }
+            }
+            return calculatedRoutes
+        }
+
+        guard coordinatesMatch(self.incidentCoordinate, incidentCoordinate) else { return }
+
+        let recommendationOrder = Dictionary(
+            uniqueKeysWithValues: recommendations.enumerated().map { index, recommendation in
+                (recommendation.id, index)
+            }
+        )
+        recommendedHydrantRoutes = routes.sorted { lhs, rhs in
+            (recommendationOrder[lhs.hydrantID] ?? Int.max) < (recommendationOrder[rhs.hydrantID] ?? Int.max)
+        }
+    }
+
+    private func coordinatesMatch(
+        _ lhs: CLLocationCoordinate2D?,
+        _ rhs: CLLocationCoordinate2D
+    ) -> Bool {
+        guard let lhs else { return false }
+        return lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
+    }
+
     // Moves the map camera to a location with a specified zoom span.
     func updateCamera(to location: CLLocation, span: CLLocationDegrees = 0.035) {
         cameraPosition = .region(
@@ -222,6 +288,15 @@ final class HydrantMapViewModel {
         } else {
             updateCamera(to: location)
         }
+    }
+}
+
+struct RecommendedHydrantRoute: Identifiable {
+    let hydrantID: Hydrant.ID
+    let route: MKRoute
+
+    var id: Hydrant.ID {
+        hydrantID
     }
 }
 

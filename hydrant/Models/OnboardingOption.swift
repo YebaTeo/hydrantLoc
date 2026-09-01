@@ -15,6 +15,17 @@ enum UserRole: String, CaseIterable, Identifiable {
     var id: String {
         rawValue
     }
+
+    var canManageIncidents: Bool {
+        self == .admin
+    }
+
+    static var saved: UserRole? {
+        guard let rawValue = UserDefaults.standard.string(forKey: "userRole") else {
+            return nil
+        }
+        return UserRole(rawValue: rawValue)
+    }
 }
 
 enum TaskForce: String, CaseIterable, Identifiable {
