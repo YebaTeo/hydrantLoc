@@ -17,6 +17,7 @@ struct NearbyHydrantsPanel: View {
     var selectedHydrant: Hydrant?
 
     var isExpanded: Bool
+    var canRemoveIncident: Bool
     var onSelectHydrant: (Hydrant) -> Void
     var onClose: () -> Void
     var onRemoveIncident: () -> Void
@@ -266,20 +267,19 @@ struct NearbyHydrantsPanel: View {
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.roundedRectangle(radius: 10))
 
-                Button(role: .destructive) {
-                    onRemoveIncident()
-                } label: {
-                    Label(
-                        "Hapus Laporan Kebakaran",
-                        systemImage: "flame.slash"
-                    )
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 38)
+                if canRemoveIncident {
+                    Button(role: .destructive) {
+                        onRemoveIncident()
+                    } label: {
+                        Label("Hapus Laporan Kebakaran", systemImage: "flame.slash")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 38)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .buttonBorderShape(.roundedRectangle(radius: 10))
                 }
-                .buttonStyle(.bordered)
-                .tint(.red)
-                .buttonBorderShape(.roundedRectangle(radius: 10))
             }
             .padding(.top, 4)
         }

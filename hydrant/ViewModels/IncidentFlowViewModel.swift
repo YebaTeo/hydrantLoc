@@ -36,13 +36,16 @@ final class IncidentFlowViewModel {
 
     private let mapViewModel: HydrantMapViewModel
     private let routeService: RouteService
+    private let currentUserRole: UserRole?
 
     init(
         mapViewModel: HydrantMapViewModel,
-        routeService: RouteService = RouteService()
+        routeService: RouteService = RouteService(),
+        currentUserRole: UserRole? = .saved
     ) {
         self.mapViewModel = mapViewModel
         self.routeService = routeService
+        self.currentUserRole = currentUserRole
     }
 
     // MARK: - Derived state
@@ -63,6 +66,9 @@ final class IncidentFlowViewModel {
         return false
     }
 
+    var isPlacingPin: Bool { state == .placingPin }
+    var isRouting: Bool { route != nil }
+    var canManageIncidents: Bool { currentUserRole?.canManageIncidents == true }
     // Show every incident marker only while browsing the list.
     var showsAllIncidentMarkers: Bool {
         state == .list
@@ -70,12 +76,14 @@ final class IncidentFlowViewModel {
 
     // MARK: - Add-incident flow
 
-    // List → passcode gate for a new incident.
+    // CC users go directly into location selection for a new incident.
     func addIncident() {
-        state = .authorizing(purpose: .start)
+        guard canManageIncidents else { return }
+        state = .placingPin
+        mapCenter = mapViewModel.cameraPosition.region?.center ?? HydrantMapDefaults.jakartaRegion.center
     }
 
-    // Detail → passcode gate to remove the selected incident.
+    // CC users can request removal of the selected incident.
     func requestRemoveIncident() {
         state = .authorizing(purpose: .end)
     }
@@ -123,19 +131,20 @@ final class IncidentFlowViewModel {
     func recenterOnSearchResult(
         _ coordinate: CLLocationCoordinate2D
     ) {
+        guard canManageIncidents, selectedIncident != nil else { return }
+        isShowingRemoveIncidentConfirmation = true
+    }
+
+    // Recenters the map (and therefore the fixed pin) on a searched address.
+    func recenterOnSearchResult(_ coordinate: CLLocationCoordinate2D) {
+        guard canManageIncidents, state == .placingPin else { return }
         mapCenter = coordinate
         recenter(on: coordinate)
     }
 
-    // Creates the incident at the current pin, opens it,
-    // and computes recommendations.
-    func confirmPinnedLocation(
-        firefighterLocation: CLLocation?
-    ) {
-        guard let coordinate = mapCenter else {
-            return
-        }
-
+    // Creates the incident at the current pin, opens it, and computes recommendations.
+    func confirmPinnedLocation(firefighterLocation: CLLocation?) {
+        guard canManageIncidents, let coordinate = mapCenter else { return }
         let incident = Incident(
             name: "Laporan #\(incidents.count + 1)",
             coordinate: coordinate
@@ -151,6 +160,7 @@ final class IncidentFlowViewModel {
 
     // Abandons pin placement without creating an incident.
     func cancelPlacingPin() {
+        guard canManageIncidents else { return }
         state = .list
     }
 
@@ -167,7 +177,7 @@ final class IncidentFlowViewModel {
         selectedIncident = incident
         mapViewModel.incidentCoordinate = incident.coordinate
         mapViewModel.hydrantRecommendations = []
-
+        mapViewModel.recommendedHydrantRoutes = []
         recenter(on: incident.coordinate)
 
         state = .incidentDetail
@@ -179,13 +189,19 @@ final class IncidentFlowViewModel {
                 routeService: routeService
             )
 
-            if let topRecommendation =
-                mapViewModel.displayedRecommendations.first {
-                await calculateRoute(
-                    to: topRecommendation.hydrant,
-                    firefighterLocation: firefighterLocation
-                )
+            // The user-to-selected route and incident-to-recommendations routes are
+            // independent. Start the latter immediately so a slow user route does
+            // not delay any incident route from appearing.
+            async let recommendedRoutes: Void = mapViewModel.updateRecommendedHydrantRoutes(
+                incidentCoordinate: incident.coordinate,
+                routeService: routeService
+            )
+
+            if let topRec = mapViewModel.displayedRecommendations.first {
+                await calculateRoute(to: topRec.hydrant, firefighterLocation: firefighterLocation)
             }
+
+            await recommendedRoutes
         }
     }
 
@@ -196,6 +212,7 @@ final class IncidentFlowViewModel {
         selectedIncident = nil
         mapViewModel.incidentCoordinate = nil
         mapViewModel.hydrantRecommendations = []
+        mapViewModel.recommendedHydrantRoutes = []
         mapViewModel.recommendationErrorMessage = nil
         mapViewModel.isLoadingRecommendations = false
 
@@ -203,6 +220,7 @@ final class IncidentFlowViewModel {
     }
 
     private func removeSelectedIncident() {
+        guard canManageIncidents else { return }
         if let selectedIncident {
             incidents.removeAll {
                 $0.id == selectedIncident.id
@@ -213,6 +231,7 @@ final class IncidentFlowViewModel {
     }
 
     func confirmRemoveIncident() {
+        guard canManageIncidents else { return }
         isShowingRemoveIncidentConfirmation = false
         removeSelectedIncident()
     }
