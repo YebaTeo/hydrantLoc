@@ -122,6 +122,7 @@ final class IncidentFlowViewModel {
         selectedIncident = incident
         mapViewModel.incidentCoordinate = incident.coordinate
         mapViewModel.hydrantRecommendations = []
+        mapViewModel.recommendedHydrantRoutes = []
         recenter(on: incident.coordinate)
         state = .incidentDetail
 
@@ -132,9 +133,19 @@ final class IncidentFlowViewModel {
                 routeService: routeService
             )
 
+            // The user-to-selected route and incident-to-recommendations routes are
+            // independent. Start the latter immediately so a slow user route does
+            // not delay any incident route from appearing.
+            async let recommendedRoutes: Void = mapViewModel.updateRecommendedHydrantRoutes(
+                incidentCoordinate: incident.coordinate,
+                routeService: routeService
+            )
+
             if let topRec = mapViewModel.displayedRecommendations.first {
                 await calculateRoute(to: topRec.hydrant, firefighterLocation: firefighterLocation)
             }
+
+            await recommendedRoutes
         }
     }
 
@@ -144,6 +155,7 @@ final class IncidentFlowViewModel {
         selectedIncident = nil
         mapViewModel.incidentCoordinate = nil
         mapViewModel.hydrantRecommendations = []
+        mapViewModel.recommendedHydrantRoutes = []
         mapViewModel.recommendationErrorMessage = nil
         mapViewModel.isLoadingRecommendations = false
         state = .list
