@@ -10,31 +10,9 @@
 		26455D9330340A670025EE41 /* hydrant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hydrant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		341F550F303E89C6008A2BD6 /* Exceptions for "hydrant" folder in "hydrant" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-			);
-			target = 26455D9230340A670025EE41 /* hydrant */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		341F5510303E89C6008A2BD6 /* Exceptions for "hydrant" folder in "Compile Sources" phase from "hydrant" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = 26455D8F30340A670025EE41 /* Sources */;
-			membershipExceptions = (
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		26455D9530340A670025EE41 /* hydrant */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				341F550F303E89C6008A2BD6 /* Exceptions for "hydrant" folder in "hydrant" target */,
-				341F5510303E89C6008A2BD6 /* Exceptions for "hydrant" folder in "Compile Sources" phase from "hydrant" target */,
-			);
 			path = hydrant;
 			sourceTree = "<group>";
 		};

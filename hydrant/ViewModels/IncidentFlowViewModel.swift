@@ -9,8 +9,8 @@ import Observation
 import SwiftUI
 
 // Owns the incident workflow state machine, the list of incident reports, routing,
-// authorization, and incident lifecycle. Holds no SwiftUI views and receives the
-// firefighter location as an argument, so it stays independent and testable.
+// role-gated incident lifecycle, and route state. Holds no SwiftUI views and receives
+// the firefighter location as an argument, so it stays independent and testable.
 @Observable
 final class IncidentFlowViewModel {
     // Current workflow step. Only this view model mutates it.
@@ -34,73 +34,51 @@ final class IncidentFlowViewModel {
 
     private let mapViewModel: HydrantMapViewModel
     private let routeService: RouteService
+    private let currentUserRole: UserRole?
 
     init(
         mapViewModel: HydrantMapViewModel,
-        routeService: RouteService = RouteService()
+        routeService: RouteService = RouteService(),
+        currentUserRole: UserRole? = .saved
     ) {
         self.mapViewModel = mapViewModel
         self.routeService = routeService
+        self.currentUserRole = currentUserRole
     }
 
     // MARK: - Derived state
 
     var isPlacingPin: Bool { state == .placingPin }
     var isRouting: Bool { route != nil }
-    var isAuthorizing: Bool {
-        if case .authorizing = state { return true }
-        return false
-    }
+    var canManageIncidents: Bool { currentUserRole?.canManageIncidents == true }
     // Show every incident marker only while browsing the list.
     var showsAllIncidentMarkers: Bool { state == .list }
 
     // MARK: - Add-incident flow
 
-    // List → passcode gate for a new incident.
+    // CC users go directly into location selection for a new incident.
     func addIncident() {
-        state = .authorizing(purpose: .start)
+        guard canManageIncidents else { return }
+        state = .placingPin
+        mapCenter = mapViewModel.cameraPosition.region?.center ?? HydrantMapDefaults.jakartaRegion.center
     }
 
-    // Detail → passcode gate to remove the selected incident.
+    // CC users can request removal of the selected incident.
     func requestRemoveIncident() {
-        state = .authorizing(purpose: .end)
-    }
-
-    // Called by the passcode view after a valid code is entered.
-    func authorizationDidSucceed() {
-        switch state {
-        case .authorizing(.start):
-            state = .placingPin
-            mapCenter = mapViewModel.cameraPosition.region?.center ?? HydrantMapDefaults.jakartaRegion.center
-        case .authorizing(.end):
-            state = selectedIncident == nil ? .list : .incidentDetail
-            isShowingRemoveIncidentConfirmation = selectedIncident != nil
-        default:
-            break
-        }
-    }
-
-    // Called when the user backs out of the passcode gate.
-    func authorizationDidCancel() {
-        switch state {
-        case .authorizing(.start):
-            state = .list
-        case .authorizing(.end):
-            state = selectedIncident == nil ? .list : .incidentDetail
-        default:
-            break
-        }
+        guard canManageIncidents, selectedIncident != nil else { return }
+        isShowingRemoveIncidentConfirmation = true
     }
 
     // Recenters the map (and therefore the fixed pin) on a searched address.
     func recenterOnSearchResult(_ coordinate: CLLocationCoordinate2D) {
+        guard canManageIncidents, state == .placingPin else { return }
         mapCenter = coordinate
         recenter(on: coordinate)
     }
 
     // Creates the incident at the current pin, opens it, and computes recommendations.
     func confirmPinnedLocation(firefighterLocation: CLLocation?) {
-        guard let coordinate = mapCenter else { return }
+        guard canManageIncidents, let coordinate = mapCenter else { return }
         let incident = Incident(
             name: "Laporan #\(incidents.count + 1)",
             coordinate: coordinate
@@ -111,6 +89,7 @@ final class IncidentFlowViewModel {
 
     // Abandons pin placement without creating an incident.
     func cancelPlacingPin() {
+        guard canManageIncidents else { return }
         state = .list
     }
 
@@ -162,6 +141,7 @@ final class IncidentFlowViewModel {
     }
 
     private func removeSelectedIncident() {
+        guard canManageIncidents else { return }
         if let selectedIncident {
             incidents.removeAll { $0.id == selectedIncident.id }
         }
@@ -169,6 +149,7 @@ final class IncidentFlowViewModel {
     }
 
     func confirmRemoveIncident() {
+        guard canManageIncidents else { return }
         isShowingRemoveIncidentConfirmation = false
         removeSelectedIncident()
     }

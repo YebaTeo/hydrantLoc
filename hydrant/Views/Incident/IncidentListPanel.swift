@@ -8,6 +8,7 @@ import SwiftUI
 // Default controller content: the list of incident reports plus the add button.
 struct IncidentListPanel: View {
     var incidents: [Incident]
+    var canAddIncident: Bool
     var onAddIncident: () -> Void
     var onSelectIncident: (Incident) -> Void
 
@@ -35,18 +36,20 @@ struct IncidentListPanel: View {
 
             Spacer()
 
-            Button {
-                onAddIncident()
-            } label: {
-                Label("Tambah", systemImage: "plus")
-                    .labelStyle(.iconOnly)
-                    .font(.title2.weight(.semibold))
-                    .frame(width: 44, height: 44)
+            if canAddIncident {
+                Button {
+                    onAddIncident()
+                } label: {
+                    Label("Tambah", systemImage: "plus")
+                        .labelStyle(.iconOnly)
+                        .font(.title2.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.circle)
+                .tint(.red)
+                .accessibilityLabel("Tambah laporan insiden")
             }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.circle)
-            .tint(.red)
-            .accessibilityLabel("Tambah laporan insiden")
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
@@ -62,7 +65,7 @@ struct IncidentListPanel: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
             }
-            Text("Ketuk tombol + untuk menambahkan laporan baru.")
+            Text(canAddIncident ? "Ketuk tombol + untuk menambahkan laporan baru." : "Belum ada laporan aktif untuk dipantau.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

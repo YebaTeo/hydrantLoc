@@ -27,6 +27,7 @@ struct IncidentControllerSheet: View {
             } else {
                 IncidentListPanel(
                     incidents: flowVM.incidents,
+                    canAddIncident: flowVM.canManageIncidents,
                     onAddIncident: flowVM.addIncident,
                     onSelectIncident: { incident in
                         flowVM.openIncident(
@@ -36,14 +37,6 @@ struct IncidentControllerSheet: View {
                     }
                 )
             }
-
-        case .authorizing(let purpose):
-            IncidentAuthorizationView(
-                title: purpose == .end ? "Hapus Laporan" : "Command Center Authorization",
-                message: purpose == .end ? "Masukkan kode 4-digit untuk menghapus laporan ini" : "Masukkan kode incident 4-digit",
-                onAuthorized: flowVM.authorizationDidSucceed,
-                onCancel: flowVM.authorizationDidCancel
-            )
 
         case .placingPin:
             PlacingPinPanel(
@@ -59,6 +52,7 @@ struct IncidentControllerSheet: View {
                     mapViewModel: mapViewModel,
                     incident: incident,
                     isExpanded: isExpanded,
+                    canRemoveIncident: flowVM.canManageIncidents,
                     onSelectHydrant: { flowVM.selectHydrant($0, firefighterLocation: locationProvider.currentLocation) },
                     onClose: flowVM.closeIncidentDetail,
                     onRemoveIncident: flowVM.requestRemoveIncident

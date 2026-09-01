@@ -68,8 +68,6 @@ struct MapTopControls: View {
             flowVM.closeIncidentDetail()
         case .routing:
             flowVM.endRoute()
-        case .authorizing:
-            flowVM.authorizationDidCancel()
         case .list:
             break
         }
