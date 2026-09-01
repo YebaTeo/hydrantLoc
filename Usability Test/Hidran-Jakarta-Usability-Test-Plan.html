@@ -1,0 +1,751 @@
+<title>Hidran Jakarta — Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    /* Light — warm, red-biased paper */
+    --paper:        #F6F3EF;
+    --surface:      #FFFFFF;
+    --surface-2:    #FBF9F6;
+    --ink:          #1B1A18;
+    --ink-soft:     #55514B;
+    --ink-faint:    #8A847C;
+    --line:         #E3DDD4;
+    --line-strong:  #D3CBBF;
+
+    --red:          #D93A2B;
+    --red-deep:     #B32A1E;
+    --red-wash:     #FBEAE7;
+    --blue:         #2563EB;
+    --blue-wash:    #E7EEFD;
+    --green:        #159C5B;
+    --green-wash:   #E2F3EA;
+
+    --shadow:       0 1px 2px rgba(30,24,18,.05), 0 8px 24px rgba(30,24,18,.06);
+    --shadow-sm:    0 1px 2px rgba(30,24,18,.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:       #131417;
+      --surface:     #1A1C20;
+      --surface-2:   #212429;
+      --ink:         #EDEAE4;
+      --ink-soft:    #ADA79E;
+      --ink-faint:   #79736B;
+      --line:        #2C2F35;
+      --line-strong: #3A3E45;
+
+      --red:         #F0604F;
+      --red-deep:    #F0604F;
+      --red-wash:    #38211D;
+      --blue:        #6C9BFF;
+      --blue-wash:   #1E2740;
+      --green:       #3FBE7C;
+      --green-wash:  #16301F;
+
+      --shadow:      0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.4);
+      --shadow-sm:   0 1px 2px rgba(0,0,0,.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:       #131417;
+    --surface:     #1A1C20;
+    --surface-2:   #212429;
+    --ink:         #EDEAE4;
+    --ink-soft:    #ADA79E;
+    --ink-faint:   #79736B;
+    --line:        #2C2F35;
+    --line-strong: #3A3E45;
+
+    --red:         #F0604F;
+    --red-deep:    #F0604F;
+    --red-wash:    #38211D;
+    --blue:        #6C9BFF;
+    --blue-wash:   #1E2740;
+    --green:       #3FBE7C;
+    --green-wash:  #16301F;
+
+    --shadow:      0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.4);
+    --shadow-sm:   0 1px 2px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: clamp(1.25rem, 4vw, 3rem) clamp(1.1rem, 4vw, 2.5rem) 5rem;
+  }
+
+  /* ---------- Typography roles ---------- */
+  .display {
+    font-family: "Barlow Condensed", "IBM Plex Sans", sans-serif;
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--red);
+  }
+  .mono { font-family: "IBM Plex Mono", monospace; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+  .brand .flame {
+    width: 26px; height: 26px;
+    display: grid; place-items: center;
+    background: var(--red);
+    border-radius: 7px;
+    flex: none;
+  }
+  .brand .flame svg { width: 15px; height: 15px; stroke: #fff; }
+
+  .toggle {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .45rem .85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    transition: border-color .18s, color .18s;
+  }
+  .toggle:hover { border-color: var(--line-strong); color: var(--ink); }
+  .toggle:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .toggle svg { width: 14px; height: 14px; stroke: currentColor; }
+
+  /* ---------- Hero ---------- */
+  .hero { margin-bottom: 2.75rem; }
+  .hero h1 {
+    margin: .5rem 0 .85rem;
+    font-size: clamp(2.6rem, 8vw, 4.4rem);
+  }
+  .hero h1 .red { color: var(--red); }
+  .lede {
+    font-size: clamp(1.02rem, 2.4vw, 1.18rem);
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 0 0 1.5rem;
+  }
+  .meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: .5rem .8rem;
+    font-size: .82rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .chip b {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .chip span { font-weight: 600; color: var(--ink); }
+
+  /* ---------- Stat row ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 3.5rem;
+  }
+  .stat {
+    background: var(--surface);
+    padding: 1.15rem 1.1rem 1.25rem;
+  }
+  .stat .num {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 6vw, 2.7rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    gap: .3rem;
+  }
+  .stat .lbl {
+    margin-top: .35rem;
+    font-size: .74rem;
+    color: var(--ink-faint);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .stat.siap .num { color: var(--green); }
+  .stat.rusak .num { color: var(--red); }
+  .stat .dot { width: 8px; height: 8px; border-radius: 50%; align-self: center; }
+
+  /* ---------- Section frame ---------- */
+  section { margin-bottom: 3.5rem; }
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: 1.4rem;
+  }
+  .sec-head .idx {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--red);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    padding: .2rem .45rem;
+    flex: none;
+  }
+  .sec-head h2 {
+    margin: 0;
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 600;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    letter-spacing: .01em;
+  }
+  .sec-head .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ---------- Scenario block ---------- */
+  .scenario {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--red);
+    border-radius: 12px;
+    padding: clamp(1.3rem, 3.5vw, 2rem);
+    box-shadow: var(--shadow);
+  }
+  .scenario .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--red);
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .9rem;
+  }
+  .scenario .tag svg { width: 15px; height: 15px; stroke: var(--red); }
+  .scenario p {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    line-height: 1.68;
+  }
+  .scenario p:last-child { margin-bottom: 0; }
+  .scenario .pull {
+    color: var(--ink);
+    font-weight: 600;
+    background: linear-gradient(transparent 62%, var(--red-wash) 62%);
+  }
+
+  /* ---------- Capabilities grid ---------- */
+  .caps {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .cap {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.25rem 1.3rem 1.35rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .cap:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--line-strong);
+  }
+  .cap .ico {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    display: grid; place-items: center;
+    margin-bottom: .85rem;
+  }
+  .cap .ico svg { width: 20px; height: 20px; stroke-width: 1.8; fill: none; }
+  .cap.i-red .ico   { background: var(--red-wash); }
+  .cap.i-red .ico svg { stroke: var(--red); }
+  .cap.i-blue .ico  { background: var(--blue-wash); }
+  .cap.i-blue .ico svg { stroke: var(--blue); }
+  .cap.i-green .ico { background: var(--green-wash); }
+  .cap.i-green .ico svg { stroke: var(--green); }
+  .cap h3 {
+    margin: 0 0 .4rem;
+    font-size: 1.06rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+  .cap p {
+    margin: 0;
+    font-size: .9rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .cap .note {
+    margin-top: .7rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+
+  /* ---------- Flow timeline ---------- */
+  .phase-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 2rem 0 1rem;
+    padding-left: 3.35rem;
+  }
+  .phase-label:first-of-type { margin-top: 0; }
+
+  .flow { list-style: none; margin: 0; padding: 0; }
+  .step {
+    position: relative;
+    padding: 0 0 1.5rem 3.35rem;
+  }
+  .step::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 34px;
+    bottom: -6px;
+    width: 2px;
+    background: var(--line);
+  }
+  .step:last-child::before { display: none; }
+  .step .n {
+    position: absolute;
+    left: 0; top: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--red);
+    color: var(--red);
+    display: grid; place-items: center;
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    z-index: 1;
+  }
+  .step .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: .95rem 1.1rem 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .step h4 {
+    margin: 0 0 .3rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .step h4 .kbd {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .78rem;
+    font-weight: 600;
+    background: var(--red-wash);
+    color: var(--red-deep);
+    padding: .1rem .45rem;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .step p {
+    margin: 0;
+    font-size: .9rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .step .result {
+    margin-top: .55rem;
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    font-size: .82rem;
+    color: var(--blue);
+    font-weight: 500;
+  }
+  .step .result svg { width: 15px; height: 15px; stroke: var(--blue); flex: none; margin-top: 2px; }
+  .step .result span { color: var(--ink-soft); font-weight: 400; }
+
+  /* ---------- Observation points ---------- */
+  .obs {
+    background: var(--surface-2);
+    border: 1px dashed var(--line-strong);
+    border-radius: 12px;
+    padding: clamp(1.3rem, 3.5vw, 1.8rem);
+  }
+  .obs ul {
+    margin: 0; padding: 0; list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .8rem 1.6rem;
+  }
+  .obs li {
+    display: flex;
+    gap: .6rem;
+    font-size: .92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .obs li svg {
+    width: 17px; height: 17px;
+    stroke: var(--red);
+    flex: none;
+    margin-top: 3px;
+  }
+  .obs li b { color: var(--ink); font-weight: 600; }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .5rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .74rem;
+    color: var(--ink-faint);
+    letter-spacing: .04em;
+  }
+
+  /* ---------- Entrance ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { opacity: 0; transform: translateY(12px); animation: rise .6s ease forwards; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+  }
+
+  @media (max-width: 620px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .caps { grid-template-columns: 1fr; }
+    .obs ul { grid-template-columns: 1fr; }
+    .step h4 { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="flame">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 1-3s0 2 2 2c1.5 0 1-4-1-5 3 0 3-4 3-4z"/></svg>
+      </span>
+      Hidran Jakarta
+    </div>
+    <button class="toggle" id="themeToggle" aria-label="Ganti tema terang / gelap">
+      <svg id="tIcon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <span id="tLabel">Tema</span>
+    </button>
+  </div>
+
+  <header class="hero reveal">
+    <div class="eyebrow">Usability Testing Plan · Tim ON TIME</div>
+    <h1 class="display">Temukan hidran <span class="red">yang benar-benar berfungsi</span>, secepat mungkin.</h1>
+    <p class="lede">Aplikasi iOS untuk petugas Pemadam Kebakaran (Damkar) Jakarta yang merekomendasikan hidran siap-pakai terdekat dari titik kebakaran dan memberi navigasi langsung ke sana — bukan sekadar yang tampak paling dekat di peta.</p>
+    <div class="meta-chips">
+      <span class="chip"><b>Core Feature</b><span>Rekomendasi &amp; Navigasi Hidran</span></span>
+      <span class="chip"><b>Participants</b><span>Petugas Damkar</span></span>
+      <span class="chip"><b>Platform</b><span>iOS · SwiftUI + MapKit</span></span>
+    </div>
+  </header>
+
+  <div class="stats reveal" style="animation-delay:.06s">
+    <div class="stat">
+      <div class="num">933</div>
+      <div class="lbl">Total Hidran</div>
+    </div>
+    <div class="stat siap">
+      <div class="num"><span class="dot" style="background:var(--green)"></span>390</div>
+      <div class="lbl">Siap Pakai</div>
+    </div>
+    <div class="stat rusak">
+      <div class="num"><span class="dot" style="background:var(--red)"></span>543</div>
+      <div class="lbl">Rusak</div>
+    </div>
+    <div class="stat">
+      <div class="num">5</div>
+      <div class="lbl">Wilayah Jakarta</div>
+    </div>
+  </div>
+
+  <!-- SCENARIO -->
+  <section class="reveal">
+    <div class="sec-head">
+      <span class="idx">01</span>
+      <h2>Scenario</h2>
+      <span class="rule"></span>
+    </div>
+    <div class="scenario">
+      <div class="tag">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 1-3s0 2 2 2c1.5 0 1-4-1-5 3 0 3-4 3-4z"/></svg>
+        Kapan fitur ini dibutuhkan
+      </div>
+      <p>Seorang petugas Satgas Damkar menerima panggilan kebakaran di sebuah lokasi di Jakarta. Saat dalam perjalanan atau setibanya di lokasi, persediaan air di mobil pemadam menipis dan petugas perlu <span class="pull">segera menemukan hidran yang benar-benar berfungsi dan paling cepat dijangkau</span> dari titik kebakaran.</p>
+      <p>Tantangannya: lebih dari separuh hidran di lapangan (543 dari 933) berstatus rusak, jadi memilih yang “terlihat paling dekat” di peta bisa berujung buntu. Dalam situasi darurat dan waktu-kritis ini, petugas membuka aplikasi untuk menandai lokasi kebakaran dan langsung memperoleh daftar hidran siap-pakai terurut berdasarkan waktu tempuh, lengkap dengan rute menuju ke sana.</p>
+    </div>
+  </section>
+
+  <!-- CAPABILITIES -->
+  <section class="reveal">
+    <div class="sec-head">
+      <span class="idx">02</span>
+      <h2>Capabilities</h2>
+      <span class="rule"></span>
+    </div>
+    <div class="caps">
+
+      <div class="cap i-blue">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <h3>Onboarding Petugas</h3>
+        <p>Menentukan peran (Satgas / Command Center) dan wilayah task force — dari lima wilayah Jakarta — sebelum masuk ke peta.</p>
+      </div>
+
+      <div class="cap i-blue">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></div>
+        <h3>Peta &amp; Filter Kondisi</h3>
+        <p>933 titik hidran di atas peta (standar / satelit), dengan statistik Total · Siap · Rusak dan filter kondisi agar petugas fokus pada hidran yang berfungsi.</p>
+      </div>
+
+      <div class="cap i-red">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <h3>Buat Laporan Insiden</h3>
+        <p>Menandai lokasi kebakaran dengan menggeser peta ke pin tengah atau mencari alamat — dikunci passcode 4-digit untuk otorisasi Command Center.</p>
+        <div class="note">Beberapa laporan aktif dapat dikelola sekaligus</div>
+      </div>
+
+      <div class="cap i-green">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6 4 4 6-8"/><path d="M14 7h6v6"/></svg></div>
+        <h3>Rekomendasi Cerdas</h3>
+        <p>Memeringkat hidran siap-pakai terdekat berdasarkan estimasi waktu tempuh berkendara (ETA), lalu jarak ke insiden — bukan sekadar garis lurus di peta.</p>
+        <div class="note">8 kandidat terdekat → 5 rekomendasi teratas</div>
+      </div>
+
+      <div class="cap i-red">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <h3>Rute &amp; Navigasi</h3>
+        <p>Menggambar rute mengemudi dari posisi petugas ke hidran terpilih, dan membuka Apple Maps untuk navigasi turn-by-turn dengan info lalu lintas.</p>
+      </div>
+
+      <div class="cap i-blue">
+        <div class="ico"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+        <h3>Kelola Laporan</h3>
+        <p>Menelusuri, membuka kembali, dan mengakhiri laporan insiden. Menghapus laporan juga dikunci passcode dan membersihkan rekomendasi serta rute aktif.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CORE FEATURE FLOW -->
+  <section class="reveal">
+    <div class="sec-head">
+      <span class="idx">03</span>
+      <h2>Core Feature Flow</h2>
+      <span class="rule"></span>
+    </div>
+
+    <div class="phase-label">Fase A · Persiapan</div>
+    <ol class="flow">
+      <li class="step">
+        <span class="n">1</span>
+        <div class="card">
+          <h4>Buka aplikasi</h4>
+          <p>Petugas melihat peta Jakarta dengan sebaran hidran dan statistik kondisi (Total / Siap / Rusak) di bagian atas.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="n">2</span>
+        <div class="card">
+          <h4>Mulai laporan baru <span class="kbd">Tombol +</span></h4>
+          <p>Ketuk tombol “+” pada panel Laporan Insiden di bagian bawah layar.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="n">3</span>
+        <div class="card">
+          <h4>Masukkan kode otorisasi</h4>
+          <p>Ketik passcode 4-digit Command Center pada keypad di layar untuk membuka mode penempatan pin.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="phase-label">Fase B · Menandai Insiden</div>
+    <ol class="flow" start="4">
+      <li class="step">
+        <span class="n">4</span>
+        <div class="card">
+          <h4>Tentukan lokasi kebakaran</h4>
+          <p>Geser peta agar pin merah di tengah tepat pada titik kebakaran, atau ketik alamat di kolom pencarian lalu pilih hasilnya untuk memusatkan peta.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="n">5</span>
+        <div class="card">
+          <h4>Konfirmasi lokasi <span class="kbd">Konfirmasi Lokasi</span></h4>
+          <p>Ketuk tombol konfirmasi. Aplikasi membuat laporan insiden dan mulai menghitung rekomendasi.</p>
+          <div class="result"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span>Sistem mengevaluasi kandidat hidran terdekat</span></div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="phase-label">Fase C · Rekomendasi &amp; Navigasi</div>
+    <ol class="flow" start="6">
+      <li class="step">
+        <span class="n">6</span>
+        <div class="card">
+          <h4>Lihat rekomendasi hidran</h4>
+          <p>Kartu hidran siap-pakai muncul terurut (peringkat 1/5) dengan jarak dari insiden, jarak berkendara, dan estimasi waktu tempuh.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="n">7</span>
+        <div class="card">
+          <h4>Bandingkan antar-rekomendasi <span class="kbd">‹ ›</span></h4>
+          <p>Telusuri kartu dengan panah kiri/kanan. Peta ikut berpindah ke hidran terpilih dan menggambar rute dari posisi petugas.</p>
+          <div class="result"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span>Rute mengemudi tergambar otomatis di peta</span></div>
+        </div>
+      </li>
+      <li class="step">
+        <span class="n">8</span>
+        <div class="card">
+          <h4>Buka detail hidran</h4>
+          <p>Geser panel ke atas untuk melihat wilayah, kecamatan, kelurahan, dan alamat lengkap hidran.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="n">9</span>
+        <div class="card">
+          <h4>Mulai navigasi <span class="kbd">Navigasi via Apple Maps</span></h4>
+          <p>Ketuk tombol navigasi. Apple Maps terbuka dengan rute mengemudi menuju hidran terpilih.</p>
+          <div class="result"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span>Petugas berangkat ke hidran — tugas inti selesai</span></div>
+        </div>
+      </li>
+      <li class="step">
+        <span class="n">10</span>
+        <div class="card">
+          <h4>Akhiri laporan</h4>
+          <p>Setelah selesai, akhiri / hapus laporan (dikunci passcode) untuk membersihkan insiden, rekomendasi, dan rute aktif.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- OBSERVATION POINTS -->
+  <section class="reveal">
+    <div class="sec-head">
+      <span class="idx">04</span>
+      <h2>Observation Points</h2>
+      <span class="rule"></span>
+    </div>
+    <div class="obs">
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Apakah petugas <b>menemukan tombol “+”</b> untuk memulai laporan tanpa ragu?</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Apakah <b>passcode terasa menghambat</b> pada kondisi darurat waktu-kritis?</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Apakah cara <b>“geser peta ke pin tengah”</b> intuitif, atau petugas mengharap tap langsung?</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Apakah petugas paham dasar pemeringkatan adalah <b>ETA, bukan garis lurus</b>?</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Apakah transisi ke <b>Apple Maps terasa mulus</b> dan sesuai harapan?</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><span>Apakah kartu rekomendasi <b>terbaca sekilas</b> saat petugas sedang bergerak?</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <span>HIDRAN JAKARTA · TIM ON TIME</span>
+    <span>USABILITY TESTING PLAN</span>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("themeToggle");
+    var label = document.getElementById("tLabel");
+    function current() {
+      var t = root.getAttribute("data-theme");
+      if (t) return t;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    function apply(t) {
+      root.setAttribute("data-theme", t);
+      label.textContent = t === "dark" ? "Gelap" : "Terang";
+    }
+    try {
+      var saved = localStorage.getItem("hj-theme");
+      if (saved) apply(saved); else label.textContent = current() === "dark" ? "Gelap" : "Terang";
+    } catch (e) { label.textContent = current() === "dark" ? "Gelap" : "Terang"; }
+    btn.addEventListener("click", function () {
+      var next = current() === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem("hj-theme", next); } catch (e) {}
+    });
+  })();
+</script>
