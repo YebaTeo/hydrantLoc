@@ -29,6 +29,7 @@ struct IncidentControllerSheet: View {
                 IncidentListPanel(
                     incidents: flowVM.incidents,
                     canAddIncident: flowVM.canManageIncidents,
+                    isExpanded: isExpanded,
                     onAddIncident: flowVM.addIncident,
                     onSelectIncident: { incident in
                         flowVM.openIncident(

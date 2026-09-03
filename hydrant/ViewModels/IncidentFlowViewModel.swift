@@ -29,16 +29,13 @@ final class IncidentFlowViewModel {
 
     private let mapViewModel: HydrantMapViewModel
     private let routeService: RouteService
-    private let currentUserRole: UserRole?
 
     init(
         mapViewModel: HydrantMapViewModel,
-        routeService: RouteService = RouteService(),
-        currentUserRole: UserRole? = .saved
+        routeService: RouteService = RouteService()
     ) {
         self.mapViewModel = mapViewModel
         self.routeService = routeService
-        self.currentUserRole = currentUserRole
     }
 
     // MARK: - Derived state
@@ -52,7 +49,7 @@ final class IncidentFlowViewModel {
     }
 
     var canManageIncidents: Bool {
-        currentUserRole?.canManageIncidents == true
+        true
     }
 
     var showsAllIncidentMarkers: Bool {
@@ -237,6 +234,7 @@ final class IncidentFlowViewModel {
 
     func endRoute() {
         clearRouteState()
+        state = selectedIncident == nil ? .list : .incidentDetail
     }
 
     @MainActor
@@ -259,6 +257,7 @@ final class IncidentFlowViewModel {
             routedHydrant = hydrant
             pendingRouteHydrant = nil
             routeErrorMessage = nil
+            state = .routing
         } catch {
             route = nil
             routedHydrant = nil

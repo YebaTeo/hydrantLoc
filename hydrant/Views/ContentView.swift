@@ -89,8 +89,7 @@ struct ContentView: View {
                 }
             }
             .mapScope(mapScope)
-            .navigationTitle("Hidran Jakarta")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingMapModes) {
                 MapModeSelectionSheet(selectedMode: $mapViewModel.mapStyleMode)
             }

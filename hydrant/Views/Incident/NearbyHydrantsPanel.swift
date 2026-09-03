@@ -50,6 +50,8 @@ struct NearbyHydrantsPanel: View {
 
                 if isExpanded {
                     expandedDetails(for: rec)
+                } else if selectedHydrant?.id == rec.hydrant.id {
+                    compactHydrantDetails(for: rec)
                 }
             }
         }
@@ -99,21 +101,21 @@ struct NearbyHydrantsPanel: View {
 
     private var carouselHeader: some View {
         HStack {
-            Button {
-                navigateCarousel(delta: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.primary)
-                    .opacity(currentIndex > 0 ? 1.0 : 0.35)
-                    .frame(width: 32, height: 32)
-                    .background(.thinMaterial, in: Circle())
-            }
-            .disabled(currentIndex <= 0)
-            .buttonStyle(.plain)
-            .accessibilityLabel("Rekomendasi sebelumnya")
-
-            Spacer()
+//            Button {
+//                navigateCarousel(delta: -1)
+//            } label: {
+//                Image(systemName: "chevron.left")
+//                    .font(.subheadline.weight(.bold))
+//                    .foregroundStyle(.primary)
+//                    .opacity(currentIndex > 0 ? 1.0 : 0.35)
+//                    .frame(width: 32, height: 32)
+//                    .background(.thinMaterial, in: Circle())
+//            }
+//            .disabled(currentIndex <= 0)
+//            .buttonStyle(.plain)
+//            .accessibilityLabel("Rekomendasi sebelumnya")
+//
+//            Spacer()
 
             HStack(spacing: 8) {
                 Text("\(currentIndex + 1)/\(recommendations.count)")
@@ -130,23 +132,23 @@ struct NearbyHydrantsPanel: View {
 
             Spacer()
 
-            Button {
-                navigateCarousel(delta: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.primary)
-                    .opacity(
-                        currentIndex < recommendations.count - 1
-                            ? 1.0
-                            : 0.35
-                    )
-                    .frame(width: 32, height: 32)
-                    .background(.thinMaterial, in: Circle())
-            }
-            .disabled(currentIndex >= recommendations.count - 1)
-            .buttonStyle(.plain)
-            .accessibilityLabel("Rekomendasi berikutnya")
+//            Button {
+//                navigateCarousel(delta: 1)
+//            } label: {
+//                Image(systemName: "chevron.right")
+//                    .font(.subheadline.weight(.bold))
+//                    .foregroundStyle(.primary)
+//                    .opacity(
+//                        currentIndex < recommendations.count - 1
+//                            ? 1.0
+//                            : 0.35
+//                    )
+//                    .frame(width: 32, height: 32)
+//                    .background(.thinMaterial, in: Circle())
+//            }
+//            .disabled(currentIndex >= recommendations.count - 1)
+//            .buttonStyle(.plain)
+//            .accessibilityLabel("Rekomendasi berikutnya")
         }
     }
 
@@ -215,6 +217,18 @@ struct NearbyHydrantsPanel: View {
                 )
             }
         }
+    }
+
+    private func compactHydrantDetails(
+        for rec: HydrantRecommendation
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            detailRow(title: "Wilayah", value: rec.hydrant.wilayah.capitalized)
+            detailRow(title: "Kecamatan", value: rec.hydrant.kecamatan.capitalized)
+            detailRow(title: "Kelurahan", value: rec.hydrant.kelurahan.capitalized)
+            detailRow(title: "Alamat", value: rec.hydrant.alamat.capitalized)
+        }
+        .padding(.top, 4)
     }
 
     private func expandedDetails(

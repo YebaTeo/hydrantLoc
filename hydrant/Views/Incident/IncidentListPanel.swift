@@ -9,46 +9,70 @@ import SwiftUI
 struct IncidentListPanel: View {
     var incidents: [Incident]
     var canAddIncident: Bool
+    var isExpanded: Bool
     var onAddIncident: () -> Void
     var onSelectIncident: (Incident) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
-            if incidents.isEmpty {
-                emptyState
-            } else {
-                list
+
+            if isExpanded {
+                Divider()
+                if incidents.isEmpty {
+                    emptyState
+                } else {
+                    list
+                }
             }
         }
     }
 
     private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Laporan Insiden")
-                    .font(.headline)
-                Text("\(incidents.count) laporan aktif")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if canAddIncident {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
                 Button {
                     onAddIncident()
                 } label: {
-                    Label("Tambah", systemImage: "plus")
-                        .labelStyle(.iconOnly)
-                        .font(.title2.weight(.semibold))
-                        .frame(width: 44, height: 44)
+                    HStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.85))
+
+                        Text("Cari lokasi kebakaran")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 18)
+                    .frame(height: 58)
+                    .background(Color.black.opacity(0.72), in: Capsule())
                 }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.circle)
-                .tint(.red)
+                .buttonStyle(.plain)
+                .disabled(!canAddIncident)
+                .accessibilityLabel("Cari lokasi kebakaran untuk laporan baru")
+
+                Button {
+                    onAddIncident()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 58, height: 58)
+                        .background(.regularMaterial, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!canAddIncident)
                 .accessibilityLabel("Tambah laporan insiden")
+            }
+
+            if isExpanded {
+                Text("\(incidents.count) laporan aktif")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
             }
         }
         .padding(.horizontal)
@@ -65,7 +89,7 @@ struct IncidentListPanel: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
             }
-            Text(canAddIncident ? "Ketuk tombol + untuk menambahkan laporan baru." : "Belum ada laporan aktif untuk dipantau.")
+            Text(canAddIncident ? "Ketuk kolom pencarian untuk menambahkan laporan baru." : "Belum ada laporan aktif untuk dipantau.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

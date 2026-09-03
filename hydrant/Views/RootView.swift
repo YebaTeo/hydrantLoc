@@ -7,22 +7,17 @@ import SwiftUI
 
 struct RootView: View {
 
-    @AppStorage("hasCompletedOnboarding")
-    private var hasCompletedOnboarding = false
+    //@AppStorage("hasCompletedOnboarding")
+    //private var hasCompletedOnboarding = false
 
     var body: some View {
         Group {
 
-            if hasCompletedOnboarding {
+            //if hasCompletedOnboarding {
 
                 ContentView()
 
-            } else {
-
-                OnboardingView(
-                    hasCompletedOnboarding: $hasCompletedOnboarding
-                )
-            }
+            //}
         }
     }
 }

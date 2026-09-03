@@ -18,24 +18,26 @@ struct MapTopControls: View {
     var body: some View {
         VStack(spacing: 10) {
             if flowVM.showsAllIncidentMarkers {
-                // Home list view: show statistics and status filter bar
-                if isPlacingPin {
-                    placingHint
-                }
-                statusBar
-                filterBar
+                topBar(showsBackButton: false)
+
                 HStack {
                     Spacer()
                     floatingControlStack
                 }
             } else {
-                // Active workflow view: clean top toolbar with back button & floating controls
-                HStack(alignment: .top) {
-                    backButton
-                    Spacer()
-                    if isPlacingPin {
-                        placingHint
-                    }
+                topBar(showsBackButton: true)
+
+                if isPlacingPin {
+                    placingHint
+                }
+
+                if flowVM.isRouting,
+                   let route = flowVM.route,
+                   let hydrant = flowVM.routedHydrant {
+                    routeSummary(route: route, hydrant: hydrant)
+                }
+
+                HStack {
                     Spacer()
                     floatingControlStack
                 }
@@ -45,6 +47,24 @@ struct MapTopControls: View {
         .padding(.top, 8)
     }
 
+    private func topBar(showsBackButton: Bool) -> some View {
+        ZStack {
+            Text("Hidran Jakarta")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            HStack {
+                if showsBackButton {
+                    backButton
+                }
+
+                Spacer()
+            }
+        }
+        .frame(height: 44)
+    }
+
     private var backButton: some View {
         Button {
             handleBackAction()
@@ -52,9 +72,9 @@ struct MapTopControls: View {
             Image(systemName: "chevron.left")
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(.primary)
-                .frame(width: 44, height: 44)
+                .frame(width: 40, height: 40)
                 .background(.regularMaterial, in: Circle())
-                .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
+                .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Kembali")
@@ -82,30 +102,70 @@ struct MapTopControls: View {
             .background(.red, in: Capsule())
     }
 
-    // Total, usable, and unusable hydrant counts.
-    private var statusBar: some View {
-        HStack {
-            MetricView(value: mapViewModel.hydrants.count.formatted(), label: "Total")
-            Spacer()
-            MetricView(value: mapViewModel.usableCount.formatted(), label: "Siap")
-            Spacer()
-            MetricView(value: mapViewModel.unusableCount.formatted(), label: "Rusak")
-        }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-    }
+    private func routeSummary(route: MKRoute, hydrant: Hydrant) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(DistanceFormatting.travelTime(route.expectedTravelTime))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.green)
 
-    // Switches between all, usable, and unusable hydrants.
-    private var filterBar: some View {
-        Picker("Kondisi", selection: $mapViewModel.statusFilter) {
-            ForEach(HydrantStatusFilter.allCases) { filter in
-                Text(filter.title).tag(filter)
+                Text(DistanceFormatting.distance(route.distance))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                routePoint(icon: "location.fill", color: .blue, title: "Lokasi Anda")
+                routePoint(icon: "drop.fill", color: .cyan, title: hydrant.title)
             }
         }
-        .pickerStyle(.segmented)
-        .padding(8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .padding(14)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
     }
+
+    private func routePoint(icon: String, color: Color, title: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(color)
+                .frame(width: 18)
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    // Total, usable, and unusable hydrant counts.
+//    private var statusBar: some View {
+//        HStack {
+//            MetricView(value: mapViewModel.hydrants.count.formatted(), label: "Total")
+//            Spacer()
+//            MetricView(value: mapViewModel.usableCount.formatted(), label: "Siap")
+//            Spacer()
+//            MetricView(value: mapViewModel.unusableCount.formatted(), label: "Rusak")
+//        }
+//        .padding(12)
+//        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+//    }
+
+    // Switches between all, usable, and unusable hydrants.
+//    private var filterBar: some View {
+//        Picker("Kondisi", selection: $mapViewModel.statusFilter) {
+//            ForEach(HydrantStatusFilter.allCases) { filter in
+//                Text(filter.title).tag(filter)
+//            }
+//        }
+//        .pickerStyle(.segmented)
+//        .padding(8)
+//        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+//    }
 
     private var floatingControlStack: some View {
         VStack(spacing: 0) {
