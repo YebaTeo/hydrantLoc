@@ -5,12 +5,19 @@
 
 import SwiftUI
 
-// Controller content for an opened incident: ranked hydrant recommendations presented in a compact
-// carousel card with left/right navigation, expandable on swipe up for full details.
+// Controller content for an opened incident: ranked hydrant recommendations
+// presented in a compact carousel card with left/right navigation,
+// expandable on swipe up for full details.
 struct NearbyHydrantsPanel: View {
+
     var mapViewModel: HydrantMapViewModel
     var incident: Incident
+
+    // Hidran yang sedang dipilih atau memiliki rute aktif.
+    var selectedHydrant: Hydrant?
+
     var isExpanded: Bool
+    var canRemoveIncident: Bool
     var onSelectHydrant: (Hydrant) -> Void
     var onClose: () -> Void
     var onRemoveIncident: () -> Void
@@ -22,7 +29,12 @@ struct NearbyHydrantsPanel: View {
     }
 
     private var currentRecommendation: HydrantRecommendation? {
-        guard !recommendations.isEmpty, currentIndex < recommendations.count else { return nil }
+        guard !recommendations.isEmpty,
+              recommendations.indices.contains(currentIndex)
+        else {
+            return nil
+        }
+
         return recommendations[currentIndex]
     }
 
@@ -35,8 +47,11 @@ struct NearbyHydrantsPanel: View {
             } else if let rec = currentRecommendation {
                 carouselHeader
                 compactCard(for: rec)
+
                 if isExpanded {
                     expandedDetails(for: rec)
+                } else if selectedHydrant?.id == rec.hydrant.id {
+                    compactHydrantDetails(for: rec)
                 }
             }
         }
@@ -44,11 +59,21 @@ struct NearbyHydrantsPanel: View {
         .padding(.top, 4)
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            synchronizeWithSelectedHydrant()
+        }
+        .onChange(of: selectedHydrant?.id) { _, _ in
+            synchronizeWithSelectedHydrant()
+        }
+        .onChange(of: recommendations.map(\.id)) { _, _ in
+            synchronizeWithSelectedHydrant()
+        }
     }
 
     private var loadingView: some View {
         HStack(spacing: 12) {
             ProgressView()
+
             Text("Mencari hidran terdekat...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -62,8 +87,10 @@ struct NearbyHydrantsPanel: View {
             Image(systemName: "drop.triangle")
                 .font(.title2)
                 .foregroundStyle(.secondary)
+
             Text("Hidran Tidak Ditemukan")
                 .font(.subheadline.weight(.semibold))
+
             Text("Tidak ada hidran siap pakai di dekat lokasi ini.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -74,21 +101,21 @@ struct NearbyHydrantsPanel: View {
 
     private var carouselHeader: some View {
         HStack {
-            Button {
-                navigateCarousel(delta: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.primary)
-                    .opacity(currentIndex > 0 ? 1.0 : 0.35)
-                    .frame(width: 32, height: 32)
-                    .background(.thinMaterial, in: Circle())
-            }
-            .disabled(currentIndex <= 0)
-            .buttonStyle(.plain)
-            .accessibilityLabel("Rekomendasi sebelumnya")
-
-            Spacer()
+//            Button {
+//                navigateCarousel(delta: -1)
+//            } label: {
+//                Image(systemName: "chevron.left")
+//                    .font(.subheadline.weight(.bold))
+//                    .foregroundStyle(.primary)
+//                    .opacity(currentIndex > 0 ? 1.0 : 0.35)
+//                    .frame(width: 32, height: 32)
+//                    .background(.thinMaterial, in: Circle())
+//            }
+//            .disabled(currentIndex <= 0)
+//            .buttonStyle(.plain)
+//            .accessibilityLabel("Rekomendasi sebelumnya")
+//
+//            Spacer()
 
             HStack(spacing: 8) {
                 Text("\(currentIndex + 1)/\(recommendations.count)")
@@ -105,23 +132,29 @@ struct NearbyHydrantsPanel: View {
 
             Spacer()
 
-            Button {
-                navigateCarousel(delta: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.primary)
-                    .opacity(currentIndex < recommendations.count - 1 ? 1.0 : 0.35)
-                    .frame(width: 32, height: 32)
-                    .background(.thinMaterial, in: Circle())
-            }
-            .disabled(currentIndex >= recommendations.count - 1)
-            .buttonStyle(.plain)
-            .accessibilityLabel("Rekomendasi berikutnya")
+//            Button {
+//                navigateCarousel(delta: 1)
+//            } label: {
+//                Image(systemName: "chevron.right")
+//                    .font(.subheadline.weight(.bold))
+//                    .foregroundStyle(.primary)
+//                    .opacity(
+//                        currentIndex < recommendations.count - 1
+//                            ? 1.0
+//                            : 0.35
+//                    )
+//                    .frame(width: 32, height: 32)
+//                    .background(.thinMaterial, in: Circle())
+//            }
+//            .disabled(currentIndex >= recommendations.count - 1)
+//            .buttonStyle(.plain)
+//            .accessibilityLabel("Rekomendasi berikutnya")
         }
     }
 
-    private func compactCard(for rec: HydrantRecommendation) -> some View {
+    private func compactCard(
+        for rec: HydrantRecommendation
+    ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -130,17 +163,22 @@ struct NearbyHydrantsPanel: View {
                         .foregroundStyle(.primary)
 
                     HStack(spacing: 6) {
-                        Label("Siap digunakan", systemImage: "checkmark.circle.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.green)
+                        Label(
+                            "Siap digunakan",
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.green)
 
                         Text("•")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
 
-                        Text("\(DistanceFormatting.distance(rec.incidentDistance)) dari insiden")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text(
+                            "\(DistanceFormatting.distance(rec.incidentDistance)) dari insiden"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                 }
 
@@ -154,21 +192,48 @@ struct NearbyHydrantsPanel: View {
             if let drivingDistance = rec.drivingDistance,
                let expectedTravelTime = rec.expectedTravelTime {
                 HStack(spacing: 12) {
-                    Label(DistanceFormatting.distance(drivingDistance), systemImage: "car.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                    Label(DistanceFormatting.travelTime(expectedTravelTime), systemImage: "clock.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                    Label(
+                        DistanceFormatting.distance(drivingDistance),
+                        systemImage: "car.fill"
+                    )
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                    Label(
+                        DistanceFormatting.travelTime(expectedTravelTime),
+                        systemImage: "clock.fill"
+                    )
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(
+                    .thinMaterial,
+                    in: RoundedRectangle(
+                        cornerRadius: 8,
+                        style: .continuous
+                    )
+                )
             }
         }
     }
 
-    private func expandedDetails(for rec: HydrantRecommendation) -> some View {
+    private func compactHydrantDetails(
+        for rec: HydrantRecommendation
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            detailRow(title: "Wilayah", value: rec.hydrant.wilayah.capitalized)
+            detailRow(title: "Kecamatan", value: rec.hydrant.kecamatan.capitalized)
+            detailRow(title: "Kelurahan", value: rec.hydrant.kelurahan.capitalized)
+            detailRow(title: "Alamat", value: rec.hydrant.alamat.capitalized)
+        }
+        .padding(.top, 4)
+    }
+
+    private func expandedDetails(
+        for rec: HydrantRecommendation
+    ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Divider()
                 .padding(.vertical, 4)
@@ -178,46 +243,72 @@ struct NearbyHydrantsPanel: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 8) {
-                detailRow(title: "Wilayah", value: rec.hydrant.wilayah.capitalized)
-                detailRow(title: "Kecamatan", value: rec.hydrant.kecamatan.capitalized)
-                detailRow(title: "Kelurahan", value: rec.hydrant.kelurahan.capitalized)
-                detailRow(title: "Alamat", value: rec.hydrant.alamat.capitalized)
+                detailRow(
+                    title: "Wilayah",
+                    value: rec.hydrant.wilayah.capitalized
+                )
+
+                detailRow(
+                    title: "Kecamatan",
+                    value: rec.hydrant.kecamatan.capitalized
+                )
+
+                detailRow(
+                    title: "Kelurahan",
+                    value: rec.hydrant.kelurahan.capitalized
+                )
+
+                detailRow(
+                    title: "Alamat",
+                    value: rec.hydrant.alamat.capitalized
+                )
             }
 
             VStack(spacing: 10) {
                 Button {
-                    MapsNavigationService.openDirections(to: rec.hydrant)
+                    MapsNavigationService.openDirections(
+                        to: rec.hydrant
+                    )
                 } label: {
-                    Label("Navigasi via Apple Maps", systemImage: "map.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
+                    Label(
+                        "Navigasi via Apple Maps",
+                        systemImage: "map.fill"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 38)
                 }
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.roundedRectangle(radius: 10))
 
-                Button(role: .destructive) {
-                    onRemoveIncident()
-                } label: {
-                    Label("Hapus Laporan Kebakaran", systemImage: "flame.slash")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
+                if canRemoveIncident {
+                    Button(role: .destructive) {
+                        onRemoveIncident()
+                    } label: {
+                        Label("Hapus Laporan Kebakaran", systemImage: "flame.slash")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 38)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .buttonBorderShape(.roundedRectangle(radius: 10))
                 }
-                .buttonStyle(.bordered)
-                .tint(.red)
-                .buttonBorderShape(.roundedRectangle(radius: 10))
             }
             .padding(.top, 4)
         }
     }
 
-    private func detailRow(title: String, value: String) -> some View {
+    private func detailRow(
+        title: String,
+        value: String
+    ) -> some View {
         HStack(alignment: .top) {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 80, alignment: .leading)
+
             Text(value)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.primary)
@@ -226,12 +317,39 @@ struct NearbyHydrantsPanel: View {
 
     private func navigateCarousel(delta: Int) {
         let newIndex = currentIndex + delta
-        guard newIndex >= 0 && newIndex < recommendations.count else { return }
+
+        guard recommendations.indices.contains(newIndex) else {
+            return
+        }
+
         withAnimation(.easeInOut(duration: 0.25)) {
             currentIndex = newIndex
         }
-        let selectedRec = recommendations[newIndex]
-        mapViewModel.panCamera(to: selectedRec.hydrant.location)
-        onSelectHydrant(selectedRec.hydrant)
+
+        let selectedRecommendation = recommendations[newIndex]
+
+        mapViewModel.panCamera(
+            to: selectedRecommendation.hydrant.location
+        )
+
+        onSelectHydrant(selectedRecommendation.hydrant)
+    }
+
+    // Menyamakan posisi carousel dengan hidran yang dipilih dari peta.
+    private func synchronizeWithSelectedHydrant() {
+        guard let selectedHydrant,
+              let selectedIndex = recommendations.firstIndex(
+                where: {
+                    $0.hydrant.id == selectedHydrant.id
+                }
+              ),
+              currentIndex != selectedIndex
+        else {
+            return
+        }
+
+        withAnimation(.easeInOut(duration: 0.25)) {
+            currentIndex = selectedIndex
+        }
     }
 }
