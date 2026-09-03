@@ -17,4 +17,13 @@ enum MapsNavigationService {
             MKLaunchOptionsShowsTrafficKey: true
         ])
     }
+
+    static func openDirections(to station: FireStation) {
+        let item = MKMapItem(location: station.location, address: nil)
+        item.name = station.title
+        item.openInMaps(launchOptions: [
+            MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving,
+            MKLaunchOptionsShowsTrafficKey: true
+        ])
+    }
 }

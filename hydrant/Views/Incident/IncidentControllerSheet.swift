@@ -25,6 +25,13 @@ struct IncidentControllerSheet: View {
                         mapViewModel.selectedHydrant = nil
                     }
                 )
+            } else if let station = mapViewModel.selectedFireStation {
+                FireStationDetailPanel(
+                    station: station,
+                    onClose: {
+                        mapViewModel.selectedFireStation = nil
+                    }
+                )
             } else {
                 IncidentListPanel(
                     incidents: flowVM.incidents,
