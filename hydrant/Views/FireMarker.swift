@@ -15,7 +15,12 @@ struct FireMarker: View {
             .resizable()
             .scaledToFit()
             .frame(width: markerSize, height: markerSize)
-            .shadow(color: .black.opacity(0.3), radius: isSelected ? 5 : 3, x: 0, y: 2)
+            .shadow(
+                color: .black.opacity(0.3),
+                radius: isSelected ? 5 : 3,
+                x: 0,
+                y: 2
+            )
             .scaleEffect(isSelected ? 1.2 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
@@ -24,4 +29,3 @@ struct FireMarker: View {
         isSelected ? 32 : 24
     }
 }
-

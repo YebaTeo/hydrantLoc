@@ -140,18 +140,6 @@ struct ContentView: View {
             .onAppear {
                 locationProvider.requestAuthorization()
             }
-            .task {
-                // Probe iCloud, register for live updates, and pull the shared
-                // incident list + active claims. No-op when cloud is offline.
-                await flowVM.startCloudSync()
-                await claimVM.start()
-                await reportVM.start()
-            }
-            .refreshable {
-                await flowVM.refreshFromCloud()
-                await claimVM.refresh()
-                await reportVM.refresh()
-            }
             .sheet(item: $reportingHydrant) { hydrant in
                 ConditionReportSheet(
                     hydrant: hydrant,

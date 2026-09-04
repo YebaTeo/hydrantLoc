@@ -47,28 +47,13 @@ final class IncidentFlowViewModel {
 
     // MARK: - Shared incident sync (CloudKit)
 
-    // Called once when the screen appears: probe the account, register for live
-    // updates, and pull the current shared incident list. Never throws — an
-    // unavailable cloud simply leaves the app on local state.
+    // CloudKit is disabled for now; incident state stays local-only.
     func startCloudSync() async {
-        cloudAvailable = await CloudKitContainer.shared.availability().isAvailable
-        guard cloudAvailable else { return }
-        try? await incidentRepository.subscribeToActiveIncidents()
-        await refreshFromCloud()
+        cloudAvailable = false
     }
 
-    // Merge the server's active incidents into the local list, keyed by id. Upsert
-    // only: locally created incidents not yet uploaded are preserved, so a failed
-    // or pending sync never makes an incident disappear from the officer's screen.
     func refreshFromCloud() async {
-        guard cloudAvailable, let shared = try? await incidentRepository.fetchActive() else {
-            return
-        }
-        var byID = Dictionary(incidents.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        for item in shared {
-            byID[item.incident.id] = item.incident
-        }
-        incidents = byID.values.sorted { $0.createdAt > $1.createdAt }
+        cloudAvailable = false
     }
 
     // MARK: - Derived state

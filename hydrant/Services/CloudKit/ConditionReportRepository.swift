@@ -12,10 +12,13 @@ import Foundation
 
 @MainActor
 final class ConditionReportRepository {
-    private let database: CKDatabase
+    private let injectedDatabase: CKDatabase?
+    private var database: CKDatabase {
+        injectedDatabase ?? CloudKitContainer.shared.publicDatabase
+    }
 
     init(database: CKDatabase? = nil) {
-        self.database = database ?? CloudKitContainer.shared.publicDatabase
+        injectedDatabase = database
     }
 
     // File a report. Append-only and idempotent (record id derives from the report

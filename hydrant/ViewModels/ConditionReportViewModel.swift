@@ -28,20 +28,11 @@ final class ConditionReportViewModel {
     // MARK: - Lifecycle
 
     func start() async {
-        cloudAvailable = await CloudKitContainer.shared.availability().isAvailable
-        guard cloudAvailable else { return }
-        try? await repository.subscribeToReports()
-        await refresh()
+        cloudAvailable = false
     }
 
     func refresh() async {
-        guard cloudAvailable, let reports = try? await repository.fetchActive() else { return }
-        // Reports arrive newest-first; keep the first seen per hydrant.
-        var latest: [Int: HydrantConditionReport] = [:]
-        for report in reports where latest[report.hidranID] == nil {
-            latest[report.hidranID] = report
-        }
-        latestByHydrant = latest
+        cloudAvailable = false
     }
 
     // MARK: - Actions
