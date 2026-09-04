@@ -12,10 +12,13 @@ import Foundation
 
 @MainActor
 final class IncidentRepository {
-    private let database: CKDatabase
+    private let injectedDatabase: CKDatabase?
+    private var database: CKDatabase {
+        injectedDatabase ?? CloudKitContainer.shared.publicDatabase
+    }
 
     init(database: CKDatabase? = nil) {
-        self.database = database ?? CloudKitContainer.shared.publicDatabase
+        injectedDatabase = database
     }
 
     // Fetch every active incident, newest first. `wilayahID` optionally scopes the

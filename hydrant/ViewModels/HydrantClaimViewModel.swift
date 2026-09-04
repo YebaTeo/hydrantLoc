@@ -33,15 +33,13 @@ final class HydrantClaimViewModel {
     // MARK: - Lifecycle
 
     func start() async {
-        cloudAvailable = await CloudKitContainer.shared.availability().isAvailable
-        guard cloudAvailable else { return }
-        try? await repository.subscribeToClaims()
-        await refresh()
+        cloudAvailable = false
+        activeClaims = [:]
     }
 
     func refresh() async {
-        guard cloudAvailable, let claims = try? await repository.activeClaims() else { return }
-        activeClaims = Dictionary(uniqueKeysWithValues: claims.map { ($0.hidranID, $0) })
+        cloudAvailable = false
+        activeClaims = [:]
     }
 
     // MARK: - Actions

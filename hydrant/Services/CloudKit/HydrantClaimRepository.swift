@@ -15,10 +15,13 @@ import Foundation
 
 @MainActor
 final class HydrantClaimRepository {
-    private let database: CKDatabase
+    private let injectedDatabase: CKDatabase?
+    private var database: CKDatabase {
+        injectedDatabase ?? CloudKitContainer.shared.publicDatabase
+    }
 
     init(database: CKDatabase? = nil) {
-        self.database = database ?? CloudKitContainer.shared.publicDatabase
+        injectedDatabase = database
     }
 
     // Attempt to claim a hydrant. Succeeds only if no active claim record exists.
@@ -70,7 +73,7 @@ final class HydrantClaimRepository {
     }
 
     // Extend a live claim (auto-renew while the unit is still on the incident).
-    func extend(hidranID: Int, by interval: TimeInterval = CloudKitSchema.Claim.defaultTTL) async throws {
+    func extend(hidranID: Int, by interval: TimeInterval = 90 * 60) async throws {
         let recordID = CKRecord.ID(recordName: CloudKitSchema.Claim.recordName(hidranID: hidranID))
         let record = try await database.record(for: recordID)
         record[CloudKitSchema.Claim.expiresAt] = Date.now.addingTimeInterval(interval) as CKRecordValue

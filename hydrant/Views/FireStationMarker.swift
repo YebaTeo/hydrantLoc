@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-// Map marker displaying the fire station (Pos Damkar) pin asset.
+// Map marker displaying the compressed fire station (Pos Damkar) pin asset.
 struct FireStationMarker: View {
     var isSelected = false
 
