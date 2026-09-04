@@ -59,12 +59,14 @@ struct ContentView: View {
                     mapScope: mapScope,
                     onSelectIncident: { incident in
                         mapViewModel.selectedHydrant = nil
+                        mapViewModel.selectedFireStation = nil
                         flowVM.openIncident(
                             incident,
                             firefighterLocation: locationProvider.currentLocation
                         )
                     },
                     onSelectHydrant: { hydrant in
+                        mapViewModel.selectedFireStation = nil
                         if flowVM.selectedIncident != nil {
                             flowVM.selectHydrant(
                                 hydrant,
@@ -73,6 +75,10 @@ struct ContentView: View {
                         } else {
                             mapViewModel.selectedHydrant = hydrant
                         }
+                    },
+                    onSelectFireStation: { station in
+                        mapViewModel.selectedHydrant = nil
+                        mapViewModel.selectedFireStation = station
                     }
                 )
 

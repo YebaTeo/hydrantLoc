@@ -16,6 +16,7 @@ struct IncidentMapView: View {
     let mapScope: Namespace.ID
     var onSelectIncident: (Incident) -> Void
     var onSelectHydrant: (Hydrant) -> Void
+    var onSelectFireStation: (FireStation) -> Void
 
     var body: some View {
         ZStack {
@@ -60,6 +61,20 @@ struct IncidentMapView: View {
                         .accessibilityLabel(hydrant.accessibilityLabel)
                     }
                 }
+
+                ForEach(mapViewModel.fireStations) { station in
+                    Annotation(station.title, coordinate: station.coordinate) {
+                        Button {
+                            onSelectFireStation(station)
+                        } label: {
+                            FireStationMarker(
+                                isSelected: mapViewModel.selectedFireStation?.id == station.id
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(station.accessibilityLabel)
+                    }
+                }
             }
 
             incidentMarkers
@@ -76,13 +91,13 @@ struct IncidentMapView: View {
     @MapContentBuilder
     private var incidentMarkers: some MapContent {
         if flowVM.showsAllIncidentMarkers {
-            // Browsing the list: every report is a tappable flame marker.
+            // Browsing the list: every report is a tappable fire incident marker.
             ForEach(flowVM.incidents) { incident in
                 Annotation(incident.name, coordinate: incident.coordinate) {
                     Button {
                         onSelectIncident(incident)
                     } label: {
-                        flameMarker
+                        FireMarker()
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(incident.name)
@@ -91,7 +106,7 @@ struct IncidentMapView: View {
         } else if let incident = flowVM.selectedIncident {
             // Detail / routing: only the open incident is shown.
             Annotation(incident.name, coordinate: incident.coordinate) {
-                flameMarker
+                FireMarker(isSelected: true)
             }
         }
     }
@@ -120,16 +135,6 @@ struct IncidentMapView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(hydrant.accessibilityLabel)
         }
-    }
-
-    private var flameMarker: some View {
-        Image(systemName: "flame.fill")
-            .font(.title2)
-            .foregroundStyle(.white)
-            .padding(10)
-            .background(Circle().fill(.red))
-            .shadow(radius: 3)
-            .accessibilityLabel("Lokasi kebakaran")
     }
 
     // Fixed marker at screen center; the user pans the map underneath to aim it.

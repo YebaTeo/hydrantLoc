@@ -1,27 +1,19 @@
 //
-//  HydrantMarker.swift
+//  FireStationMarker.swift
 //  hydrant
-//
-//  Created by Yeba Teo on 18/08/26.
 //
 
 import SwiftUI
 
-// Map marker displaying the hydrant pin asset.
-struct HydrantMarker: View {
-    let isUsable: Bool
+// Map marker displaying the fire station (Pos Damkar) pin asset.
+struct FireStationMarker: View {
     var isSelected = false
-    var claimedByMine = false
-    var claimedByOther = false
-    var hasWarning = false
 
     var body: some View {
-        Image("HydrantMarkerPin")
+        Image("FireStationMarkerPin")
             .resizable()
             .scaledToFit()
             .frame(width: markerSize, height: markerSize)
-            .opacity(isUsable ? 1.0 : 0.45)
-            .saturation(isUsable ? 1.0 : 0.3)
             .overlay(alignment: .topTrailing) {
                 if isSelected {
                     Circle()
@@ -32,7 +24,7 @@ struct HydrantMarker: View {
                 }
             }
             .shadow(
-                color: isSelected ? .blue.opacity(0.6) : .black.opacity(0.25),
+                color: isSelected ? .orange.opacity(0.6) : .black.opacity(0.25),
                 radius: isSelected ? 6 : 3,
                 x: 0,
                 y: 2
@@ -42,7 +34,6 @@ struct HydrantMarker: View {
     }
 
     private var markerSize: CGFloat {
-        isSelected ? 40 : 32
+        isSelected ? 38 : 28
     }
 }
-

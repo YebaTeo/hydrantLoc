@@ -34,14 +34,24 @@ final class HydrantMapViewModel {
     // Selected hydrant for direct map inspection.
     var selectedHydrant: Hydrant?
 
+    // Full fire station dataset loaded from the app bundle.
+    var fireStations: [FireStation]
+
+    // Selected fire station for direct map inspection.
+    var selectedFireStation: FireStation?
+
     // Standard vs. satellite map appearance.
     var mapStyleMode: MapStyleMode = .standard
 
     private let recommendationCandidateLimit = 8
     private let displayedRecommendationLimit = 5
     
-    init(hydrants: [Hydrant] = HydrantStore.load()) {
+    init(
+        hydrants: [Hydrant] = HydrantStore.load(),
+        fireStations: [FireStation] = FireStationStore.load()
+    ) {
         self.hydrants = hydrants
+        self.fireStations = fireStations
         cameraPosition = .region(HydrantMapDefaults.jakartaRegion)
     }
     var displayedRecommendations: [HydrantRecommendation] {

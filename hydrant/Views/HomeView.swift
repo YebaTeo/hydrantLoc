@@ -27,6 +27,13 @@ struct HomeView: View {
                     }
                 }
 
+                ForEach(viewModel.fireStations) { station in
+                    Annotation(station.title, coordinate: station.coordinate) {
+                        FireStationMarker()
+                            .accessibilityLabel(station.accessibilityLabel)
+                    }
+                }
+
                 ForEach(fireIncidents) { incident in
                     Annotation(incident.title, coordinate: incident.coordinate) {
                         FireMarker()
