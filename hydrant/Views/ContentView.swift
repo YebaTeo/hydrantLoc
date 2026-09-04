@@ -14,7 +14,12 @@ import SwiftUI
 struct ContentView: View {
     @State private var mapViewModel: HydrantMapViewModel
     @State private var flowVM: IncidentFlowViewModel
+    @State private var claimVM = HydrantClaimViewModel()
+    @State private var reportVM = ConditionReportViewModel()
     @State private var locationProvider = LocationProvider()
+
+    // The hydrant whose condition-report form is open, if any.
+    @State private var reportingHydrant: Hydrant?
 
     // Connects the custom MapKit controls to this map instance.
     @Namespace private var mapScope
@@ -50,6 +55,8 @@ struct ContentView: View {
                 IncidentMapView(
                     mapViewModel: mapViewModel,
                     flowVM: flowVM,
+                    claimVM: claimVM,
+                    reportVM: reportVM,
                     mapScope: mapScope,
                     onSelectIncident: { incident in
                         mapViewModel.selectedHydrant = nil
@@ -84,8 +91,11 @@ struct ContentView: View {
                     IncidentControllerSheet(
                         mapViewModel: mapViewModel,
                         flowVM: flowVM,
+                        claimVM: claimVM,
+                        reportVM: reportVM,
                         locationProvider: locationProvider,
-                        isExpanded: isSheetExpanded
+                        isExpanded: isSheetExpanded,
+                        onReportCondition: { reportingHydrant = $0 }
                     )
                 }
             }
@@ -110,6 +120,11 @@ struct ContentView: View {
                 isPresented: $flowVM.isShowingRemoveIncidentConfirmation
             ) {
                 Button("Akhiri Laporan", role: .destructive) {
+                    // Free any hydrants this unit held for the incident before it
+                    // closes, so they drop off every other unit's map too.
+                    if let incidentID = flowVM.selectedIncident?.id {
+                        Task { await claimVM.releaseAll(forIncident: incidentID) }
+                    }
                     flowVM.confirmRemoveIncident()
                 }
                 Button("Batalkan", role: .cancel) {
@@ -120,6 +135,46 @@ struct ContentView: View {
             }
             .onAppear {
                 locationProvider.requestAuthorization()
+            }
+            .task {
+                // Probe iCloud, register for live updates, and pull the shared
+                // incident list + active claims. No-op when cloud is offline.
+                await flowVM.startCloudSync()
+                await claimVM.start()
+                await reportVM.start()
+            }
+            .refreshable {
+                await flowVM.refreshFromCloud()
+                await claimVM.refresh()
+                await reportVM.refresh()
+            }
+            .sheet(item: $reportingHydrant) { hydrant in
+                ConditionReportSheet(
+                    hydrant: hydrant,
+                    incidentID: flowVM.selectedIncident?.id,
+                    onSubmit: { level, condition, note in
+                        Task {
+                            await reportVM.submit(
+                                hydrant: hydrant,
+                                level: level,
+                                condition: condition,
+                                note: note,
+                                incidentID: flowVM.selectedIncident?.id
+                            )
+                        }
+                    }
+                )
+            }
+            .alert(
+                "Klaim Hidran",
+                isPresented: Binding(
+                    get: { claimVM.conflictMessage != nil },
+                    set: { if !$0 { claimVM.conflictMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { claimVM.conflictMessage = nil }
+            } message: {
+                Text(claimVM.conflictMessage ?? "")
             }
             .onChange(of: locationProvider.currentLocation) { _, location in
                 if let location {

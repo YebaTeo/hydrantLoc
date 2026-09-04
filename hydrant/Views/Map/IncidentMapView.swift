@@ -11,6 +11,8 @@ import SwiftUI
 struct IncidentMapView: View {
     @Bindable var mapViewModel: HydrantMapViewModel
     var flowVM: IncidentFlowViewModel
+    var claimVM: HydrantClaimViewModel
+    var reportVM: ConditionReportViewModel
     let mapScope: Namespace.ID
     var onSelectIncident: (Incident) -> Void
     var onSelectHydrant: (Hydrant) -> Void
@@ -43,7 +45,10 @@ struct IncidentMapView: View {
                         } label: {
                             HydrantMarker(
                                 isUsable: hydrant.isUsable,
-                                isSelected: mapViewModel.selectedHydrant?.id == hydrant.id
+                                isSelected: mapViewModel.selectedHydrant?.id == hydrant.id,
+                                claimedByMine: claimVM.isMine(hydrant),
+                                claimedByOther: claimVM.isClaimedByOther(hydrant),
+                                hasWarning: reportVM.hasWarning(for: hydrant)
                             )
                         }
                         .buttonStyle(.plain)
@@ -101,7 +106,10 @@ struct IncidentMapView: View {
             } label: {
                 HydrantMarker(
                     isUsable: hydrant.isUsable,
-                    isSelected: flowVM.routedHydrant?.id == hydrant.id
+                    isSelected: flowVM.routedHydrant?.id == hydrant.id,
+                    claimedByMine: claimVM.isMine(hydrant),
+                    claimedByOther: claimVM.isClaimedByOther(hydrant),
+                    hasWarning: reportVM.hasWarning(for: hydrant)
                 )
             }
             .buttonStyle(.plain)

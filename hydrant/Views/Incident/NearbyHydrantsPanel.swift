@@ -9,13 +9,17 @@ import SwiftUI
 // carousel card with left/right navigation, expandable on swipe up for full details.
 struct NearbyHydrantsPanel: View {
     var mapViewModel: HydrantMapViewModel
+    var claimVM: HydrantClaimViewModel
+    var reportVM: ConditionReportViewModel
     var incident: Incident
     var isExpanded: Bool
     var onSelectHydrant: (Hydrant) -> Void
     var onClose: () -> Void
     var onRemoveIncident: () -> Void
+    var onReportCondition: (Hydrant) -> Void
 
     @State private var currentIndex = 0
+    @State private var isClaimInFlight = false
 
     private var recommendations: [HydrantRecommendation] {
         mapViewModel.displayedRecommendations
@@ -151,6 +155,9 @@ struct NearbyHydrantsPanel: View {
                     .foregroundStyle(.blue)
             }
 
+            claimBadge(for: rec.hydrant)
+            conditionBadge(for: rec.hydrant)
+
             if let drivingDistance = rec.drivingDistance,
                let expectedTravelTime = rec.expectedTravelTime {
                 HStack(spacing: 12) {
@@ -185,6 +192,20 @@ struct NearbyHydrantsPanel: View {
             }
 
             VStack(spacing: 10) {
+                claimButton(for: rec.hydrant)
+
+                Button {
+                    onReportCondition(rec.hydrant)
+                } label: {
+                    Label("Laporkan Kondisi", systemImage: "exclamationmark.bubble.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                }
+                .buttonStyle(.bordered)
+                .tint(.orange)
+                .buttonBorderShape(.roundedRectangle(radius: 10))
+
                 Button {
                     MapsNavigationService.openDirections(to: rec.hydrant)
                 } label: {
@@ -221,6 +242,82 @@ struct NearbyHydrantsPanel: View {
             Text(value)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.primary)
+        }
+    }
+
+    // A hydrant held by another unit is never hidden — it is labelled, so the
+    // officer can decide (some hydrants can be shared). Shows nothing when free.
+    @ViewBuilder
+    private func claimBadge(for hydrant: Hydrant) -> some View {
+        if let claim = claimVM.claim(for: hydrant), claim.unitKode != claimVM.myUnit {
+            Label(
+                "Dipakai \(claim.unitKode) sejak \(claim.startedAt.formatted(date: .omitted, time: .shortened))",
+                systemImage: "person.fill.checkmark"
+            )
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.orange)
+        } else if claimVM.isMine(hydrant) {
+            Label("Dipakai unit Anda", systemImage: "checkmark.seal.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.blue)
+        }
+    }
+
+    // An active field report on this hydrant, shown to every unit at once. A
+    // problem shows amber; a "berfungsi" recovery report shows green.
+    @ViewBuilder
+    private func conditionBadge(for hydrant: Hydrant) -> some View {
+        if let report = reportVM.latestReport(for: hydrant) {
+            Label(
+                "\(report.condition.title) · \(report.reportedByUnit) · \(report.time.formatted(date: .omitted, time: .shortened))",
+                systemImage: report.condition.systemImage
+            )
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(report.condition.isProblem ? .orange : .green)
+        }
+    }
+
+    // Claim / release the currently shown hydrant. Only rendered when the shared
+    // layer is live; offline the app has no claims to coordinate.
+    @ViewBuilder
+    private func claimButton(for hydrant: Hydrant) -> some View {
+        if claimVM.cloudAvailable {
+            if claimVM.isMine(hydrant) {
+                Button(role: .destructive) {
+                    runClaimAction { await claimVM.release(hydrant) }
+                } label: {
+                    claimButtonLabel("Lepas Hidran", systemImage: "hand.raised.slash.fill")
+                }
+                .buttonStyle(.bordered)
+                .tint(.blue)
+                .buttonBorderShape(.roundedRectangle(radius: 10))
+                .disabled(isClaimInFlight)
+            } else {
+                Button {
+                    runClaimAction { await claimVM.claim(hydrant, incidentID: incident.id) }
+                } label: {
+                    claimButtonLabel("Pakai Hidran Ini", systemImage: "hand.raised.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .buttonBorderShape(.roundedRectangle(radius: 10))
+                .disabled(isClaimInFlight)
+            }
+        }
+    }
+
+    private func claimButtonLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.subheadline.weight(.bold))
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+    }
+
+    private func runClaimAction(_ action: @escaping () async -> Void) {
+        isClaimInFlight = true
+        Task {
+            await action()
+            isClaimInFlight = false
         }
     }
 

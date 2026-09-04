@@ -17,7 +17,15 @@ enum HydrantStore {
 
         do {
             let data = try Data(contentsOf: url)
-            return try JSONDecoder().decode([Hydrant].self, from: data)
+            let decoded = try JSONDecoder().decode([Hydrant].self, from: data)
+            // Assign a stable 1-based id by dataset position. This mirrors the
+            // production serial that would be assigned once at import; every claim
+            // and grid lookup keys off it.
+            return decoded.enumerated().map { index, hydrant in
+                var hydrant = hydrant
+                hydrant.hidranID = index + 1
+                return hydrant
+            }
         } catch {
             assertionFailure("Hydrant JSON could not be decoded: \(error)")
             return []

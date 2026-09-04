@@ -11,8 +11,11 @@ import SwiftUI
 struct IncidentControllerSheet: View {
     var mapViewModel: HydrantMapViewModel
     var flowVM: IncidentFlowViewModel
+    var claimVM: HydrantClaimViewModel
+    var reportVM: ConditionReportViewModel
     var locationProvider: LocationProvider
     var isExpanded: Bool
+    var onReportCondition: (Hydrant) -> Void
 
     var body: some View {
         switch flowVM.state {
@@ -20,9 +23,11 @@ struct IncidentControllerSheet: View {
             if let hydrant = mapViewModel.selectedHydrant {
                 HydrantDetailPanel(
                     hydrant: hydrant,
+                    reportVM: reportVM,
                     onClose: {
                         mapViewModel.selectedHydrant = nil
-                    }
+                    },
+                    onReportCondition: onReportCondition
                 )
             } else {
                 IncidentListPanel(
@@ -57,11 +62,14 @@ struct IncidentControllerSheet: View {
             if let incident = flowVM.selectedIncident {
                 NearbyHydrantsPanel(
                     mapViewModel: mapViewModel,
+                    claimVM: claimVM,
+                    reportVM: reportVM,
                     incident: incident,
                     isExpanded: isExpanded,
                     onSelectHydrant: { flowVM.selectHydrant($0, firefighterLocation: locationProvider.currentLocation) },
                     onClose: flowVM.closeIncidentDetail,
-                    onRemoveIncident: flowVM.requestRemoveIncident
+                    onRemoveIncident: flowVM.requestRemoveIncident,
+                    onReportCondition: onReportCondition
                 )
             }
         }

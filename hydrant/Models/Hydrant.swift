@@ -19,6 +19,12 @@ struct Hydrant: Decodable, Identifiable, Hashable {
     let latitude: Double
     let kondisi: String
 
+    // Stable integer id assigned at load time (see HydrantStore). Not part of the
+    // JSON. This is the demo stand-in for the production serial `hidran.id` — the
+    // key that bridges a hydrant to the precomputed grid and to a CloudKit claim
+    // record ("klaim-aktif-<hidranID>"). Stable as long as the dataset order holds.
+    var hidranID: Int = 0
+
     var id: String {
         "\(latitude),\(longitude),\(alamat)"
     }

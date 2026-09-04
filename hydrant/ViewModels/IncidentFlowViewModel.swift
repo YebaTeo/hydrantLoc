@@ -32,15 +32,48 @@ final class IncidentFlowViewModel {
     // Holds a hydrant whose route is waiting for the firefighter location to arrive.
     private var pendingRouteHydrant: Hydrant?
 
+    // Whether the shared (CloudKit) layer is live. Offline-first: when false the app
+    // runs entirely on local state and every write is best-effort in the background.
+    private(set) var cloudAvailable = false
+
     private let mapViewModel: HydrantMapViewModel
     private let routeService: RouteService
+    private let incidentRepository: IncidentRepository
 
     init(
         mapViewModel: HydrantMapViewModel,
-        routeService: RouteService = RouteService()
+        routeService: RouteService = RouteService(),
+        incidentRepository: IncidentRepository? = nil
     ) {
         self.mapViewModel = mapViewModel
         self.routeService = routeService
+        self.incidentRepository = incidentRepository ?? IncidentRepository()
+    }
+
+    // MARK: - Shared incident sync (CloudKit)
+
+    // Called once when the screen appears: probe the account, register for live
+    // updates, and pull the current shared incident list. Never throws — an
+    // unavailable cloud simply leaves the app on local state.
+    func startCloudSync() async {
+        cloudAvailable = await CloudKitContainer.shared.availability().isAvailable
+        guard cloudAvailable else { return }
+        try? await incidentRepository.subscribeToActiveIncidents()
+        await refreshFromCloud()
+    }
+
+    // Merge the server's active incidents into the local list, keyed by id. Upsert
+    // only: locally created incidents not yet uploaded are preserved, so a failed
+    // or pending sync never makes an incident disappear from the officer's screen.
+    func refreshFromCloud() async {
+        guard cloudAvailable, let shared = try? await incidentRepository.fetchActive() else {
+            return
+        }
+        var byID = Dictionary(incidents.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for item in shared {
+            byID[item.incident.id] = item.incident
+        }
+        incidents = byID.values.sorted { $0.createdAt > $1.createdAt }
     }
 
     // MARK: - Derived state
@@ -107,6 +140,22 @@ final class IncidentFlowViewModel {
         )
         incidents.insert(incident, at: 0)
         openIncident(incident, firefighterLocation: firefighterLocation)
+
+        // Publish to the shared layer in the background. The record id is derived
+        // from the incident UUID, so a retry (or an offline replay) is idempotent
+        // and never creates a duplicate TKP. A failure here does not block the flow.
+        publishNewIncident(incident)
+    }
+
+    // Best-effort background create; offline-first, never blocks the officer.
+    private func publishNewIncident(_ incident: Incident) {
+        guard cloudAvailable else { return }
+        let shared = SharedIncident(
+            incident: incident,
+            status: .aktif,
+            createdByUnit: DeviceIdentity.unitKode
+        )
+        Task { try? await incidentRepository.save(shared) }
     }
 
     // Abandons pin placement without creating an incident.
@@ -151,6 +200,16 @@ final class IncidentFlowViewModel {
 
     private func removeSelectedIncident() {
         if let selectedIncident {
+            // Ending a report finishes the shared incident (status → selesai) so it
+            // drops off every other unit's active list too. Background, best-effort.
+            if cloudAvailable {
+                let shared = SharedIncident(
+                    incident: selectedIncident,
+                    status: .selesai,
+                    createdByUnit: DeviceIdentity.unitKode
+                )
+                Task { try? await incidentRepository.markFinished(shared) }
+            }
             incidents.removeAll { $0.id == selectedIncident.id }
         }
         closeIncidentDetail()
