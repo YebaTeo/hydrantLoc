@@ -24,8 +24,7 @@ struct ContentView: View {
     // Connects the custom MapKit controls to this map instance.
     @Namespace private var mapScope
 
-    // Whether the controller sheet is expanded. Auto-expands for the passcode step
-    // (its keypad is tall) and collapses back on return to the list.
+    // Whether the controller sheet is expanded.
     @State private var isSheetExpanded = false
 
     @State private var isShowingMapModes = false
@@ -100,8 +99,7 @@ struct ContentView: View {
                 }
             }
             .mapScope(mapScope)
-            .navigationTitle("Hidran Jakarta")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingMapModes) {
                 MapModeSelectionSheet(selectedMode: $mapViewModel.mapStyleMode)
             }
@@ -182,9 +180,7 @@ struct ContentView: View {
                 }
             }
             .onChange(of: flowVM.state) { _, _ in
-                // Expand only for the tall passcode keypad; every other state uses the
-                // compact height so the map (and the center pin) stay visible.
-                isSheetExpanded = flowVM.isAuthorizing
+                isSheetExpanded = false
             }
         }
     }

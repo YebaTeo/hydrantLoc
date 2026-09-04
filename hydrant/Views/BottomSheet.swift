@@ -5,17 +5,17 @@
 
 import SwiftUI
 
-// A draggable bottom sheet that lives in the same view hierarchy as the map, so
-// the map, the top controls, and the sheet content are all interactive at once.
-// This intentionally replaces SwiftUI's `.sheet`, whose modal/background-interaction
-// model fights a map-driven UI (tap-through, lost ScrollView taps, keyboard focus).
-// A draggable bottom sheet that lives in the same view hierarchy as the map, so
-// the map, the top controls, and the sheet content are all interactive at once.
+// A draggable bottom sheet that lives in the same view hierarchy
+// as the map, so the map, top controls, and sheet content remain
+// interactive at the same time.
 struct BottomSheet<Content: View>: View {
+
     @Binding var isExpanded: Bool
+
     // Default collapsed fraction used as fallback.
     var collapsedFraction: CGFloat = 0.18
     var expandedFraction: CGFloat = 0.85
+
     @ViewBuilder var content: () -> Content
 
     @State private var contentHeight: CGFloat = 0
@@ -23,53 +23,120 @@ struct BottomSheet<Content: View>: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let maxScreenHeight = proxy.size.height * expandedFraction
-            let minScreenHeight = proxy.size.height * 0.14
+            let maxScreenHeight =
+                proxy.size.height * expandedFraction
 
-            // Dynamic collapsed height based on intrinsic content measurement (+ 26pt for grabber)
-            let dynamicCollapsed = contentHeight > 0
-                ? min(max(contentHeight + 26, minScreenHeight), maxScreenHeight)
+            let minScreenHeight =
+                proxy.size.height * 0.14
+
+            // Dynamic collapsed height based on intrinsic content
+            // measurement, including additional space for the grabber.
+            let dynamicCollapsed =
+                contentHeight > 0
+                ? min(
+                    max(
+                        contentHeight + 26,
+                        minScreenHeight
+                    ),
+                    maxScreenHeight
+                )
                 : proxy.size.height * collapsedFraction
 
-            let base = isExpanded ? maxScreenHeight : dynamicCollapsed
-            let height = min(max(base - dragTranslation, minScreenHeight), maxScreenHeight)
+            let base =
+                isExpanded
+                ? maxScreenHeight
+                : dynamicCollapsed
+
+            let height = min(
+                max(
+                    base - dragTranslation,
+                    minScreenHeight
+                ),
+                maxScreenHeight
+            )
 
             VStack(spacing: 0) {
                 grabber
                 content()
             }
-            .frame(width: proxy.size.width, height: height, alignment: .top)
+            .frame(
+                width: proxy.size.width,
+                height: height,
+                alignment: .top
+            )
             .background(.regularMaterial)
-            .clipShape(.rect(topLeadingRadius: 24, topTrailingRadius: 24))
-            .shadow(color: .black.opacity(0.18), radius: 12, y: -3)
+            .clipShape(
+                .rect(
+                    topLeadingRadius: 24,
+                    topTrailingRadius: 24
+                )
+            )
+            .shadow(
+                color: .black.opacity(0.18),
+                radius: 12,
+                y: -3
+            )
             .background(
-                // Hidden measurement view using fixedSize to prevent layout oscillation
+                // Hidden measurement view using fixedSize
+                // to prevent layout oscillation.
                 content()
-                    .fixedSize(horizontal: false, vertical: true)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
                     .hidden()
                     .background(
                         GeometryReader { measureProxy in
                             Color.clear
                                 .onAppear {
-                                    let h = measureProxy.size.height
-                                    if abs(contentHeight - h) > 2 {
-                                        contentHeight = h
+                                    let newHeight =
+                                        measureProxy.size.height
+
+                                    if abs(
+                                        contentHeight - newHeight
+                                    ) > 2 {
+                                        contentHeight = newHeight
                                     }
                                 }
-                                .onChange(of: measureProxy.size.height) { _, newH in
-                                    if abs(contentHeight - newH) > 2 {
-                                        contentHeight = newH
+                                .onChange(
+                                    of: measureProxy.size.height
+                                ) { _, newHeight in
+                                    if abs(
+                                        contentHeight - newHeight
+                                    ) > 2 {
+                                        contentHeight = newHeight
                                     }
                                 }
                         }
                     )
                     .allowsHitTesting(false)
             )
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: contentHeight)
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity,
+                alignment: .bottom
+            )
+            .animation(
+                .spring(
+                    response: 0.35,
+                    dampingFraction: 0.85
+                ),
+                value: isExpanded
+            )
+            .animation(
+                .spring(
+                    response: 0.35,
+                    dampingFraction: 0.85
+                ),
+                value: contentHeight
+            )
         }
-        .ignoresSafeArea(edges: .bottom)
+        // Ignore only the device/container safe area.
+        // The keyboard safe area remains respected.
+        .ignoresSafeArea(
+            .container,
+            edges: .bottom
+        )
     }
 
     // The drag handle: dragging or tapping it resizes the sheet.
@@ -83,7 +150,9 @@ struct BottomSheet<Content: View>: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 4)
-                    .updating($dragTranslation) { value, state, _ in
+                    .updating(
+                        $dragTranslation
+                    ) { value, state, _ in
                         state = value.translation.height
                     }
                     .onEnded { value in
