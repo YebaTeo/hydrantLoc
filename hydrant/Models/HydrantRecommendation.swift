@@ -18,3 +18,13 @@ struct HydrantRecommendation: Identifiable {
         hydrant.id
     }
 }
+
+// A fire station (Pos Damkar) ranked by straight-line distance from the incident.
+struct FireStationRecommendation: Identifiable {
+    let station: FireStation
+    let incidentDistance: CLLocationDistance
+
+    var id: FireStation.ID {
+        station.id
+    }
+}

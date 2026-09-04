@@ -169,6 +169,9 @@ final class IncidentFlowViewModel {
         mapViewModel.incidentCoordinate = incident.coordinate
         mapViewModel.hydrantRecommendations = []
         mapViewModel.recommendedHydrantRoutes = []
+        mapViewModel.updateFireStationRecommendations(
+            incidentCoordinate: incident.coordinate
+        )
 
         recenter(on: incident.coordinate)
 
@@ -206,6 +209,7 @@ final class IncidentFlowViewModel {
         mapViewModel.incidentCoordinate = nil
         mapViewModel.hydrantRecommendations = []
         mapViewModel.recommendedHydrantRoutes = []
+        mapViewModel.fireStationRecommendations = []
         mapViewModel.recommendationErrorMessage = nil
         mapViewModel.isLoadingRecommendations = false
 

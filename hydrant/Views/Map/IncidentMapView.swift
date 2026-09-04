@@ -31,7 +31,7 @@ struct IncidentMapView: View {
         Map(position: $mapViewModel.cameraPosition, scope: mapScope) {
             ForEach(mapViewModel.recommendedHydrantRoutes) { recommendedRoute in
                 MapPolyline(recommendedRoute.route.polyline)
-                    .stroke(.orange.opacity(0.75), lineWidth: 4)
+                    .stroke(.gray.opacity(0.35), lineWidth: 3)
             }
 
             if flowVM.isRouting, let route = flowVM.route {
@@ -42,6 +42,13 @@ struct IncidentMapView: View {
             if mapViewModel.incidentCoordinate != nil {
                 ForEach(mapViewModel.displayedRecommendations) { recommendation in
                     recommendationAnnotation(for: recommendation)
+                }
+
+                ForEach(mapViewModel.fireStationRecommendations) { recommendation in
+                    Annotation(recommendation.station.title, coordinate: recommendation.station.coordinate) {
+                        FireStationMarker(isSelected: false)
+                            .accessibilityLabel(recommendation.station.accessibilityLabel)
+                    }
                 }
             } else {
                 ForEach(mapViewModel.filteredHydrants) { hydrant in

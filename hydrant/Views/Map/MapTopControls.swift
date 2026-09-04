@@ -103,43 +103,44 @@ struct MapTopControls: View {
     }
 
     private func routeSummary(route: MKRoute, hydrant: Hydrant) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(DistanceFormatting.travelTime(route.expectedTravelTime))
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.green)
+        HStack(spacing: 8) {
+            Text(DistanceFormatting.travelTime(route.expectedTravelTime))
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.green)
 
-                Text(DistanceFormatting.distance(route.distance))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+            Text(DistanceFormatting.distance(route.distance))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
 
-                Spacer()
-            }
+            Divider()
+                .frame(height: 16)
 
-            VStack(alignment: .leading, spacing: 8) {
-                routePoint(icon: "location.fill", color: .blue, title: "Lokasi Anda")
-                routePoint(icon: "drop.fill", color: .cyan, title: hydrant.title)
-            }
-        }
-        .padding(14)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
-    }
+            Image(systemName: "location.fill")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.blue)
+            Text("Anda")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
 
-    private func routePoint(icon: String, color: Color, title: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(color)
-                .frame(width: 18)
+            Image(systemName: "arrow.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.tertiary)
 
-            Text(title)
-                .font(.subheadline.weight(.semibold))
+            Image(systemName: "drop.fill")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.cyan)
+            Text(hydrant.title)
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             Spacer(minLength: 0)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
     }
 
     // Total, usable, and unusable hydrant counts.

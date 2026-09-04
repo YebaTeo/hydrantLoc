@@ -40,11 +40,15 @@ final class HydrantMapViewModel {
     // Selected fire station for direct map inspection.
     var selectedFireStation: FireStation?
 
+    // Nearest fire stations (Pos Damkar) to the current incident.
+    var fireStationRecommendations: [FireStationRecommendation] = []
+
     // Standard vs. satellite map appearance.
     var mapStyleMode: MapStyleMode = .standard
 
     private let recommendationCandidateLimit = 8
     private let displayedRecommendationLimit = 5
+    private let fireStationRecommendationLimit = 3
     
     init(
         hydrants: [Hydrant] = HydrantStore.load(),
@@ -98,6 +102,30 @@ final class HydrantMapViewModel {
         }
         return DistanceFormatting.distance(distance)
     }
+
+    // Ranks the operational fire stations by straight-line distance from the
+    // incident and keeps the nearest few as recommendations.
+    func updateFireStationRecommendations(
+        incidentCoordinate: CLLocationCoordinate2D
+    ) {
+        let incidentLocation = CLLocation(
+            latitude: incidentCoordinate.latitude,
+            longitude: incidentCoordinate.longitude
+        )
+
+        fireStationRecommendations = fireStations
+            .filter(\.isOperational)
+            .map { station in
+                FireStationRecommendation(
+                    station: station,
+                    incidentDistance: station.location.distance(from: incidentLocation)
+                )
+            }
+            .sorted { $0.incidentDistance < $1.incidentDistance }
+            .prefix(fireStationRecommendationLimit)
+            .map { $0 }
+    }
+
     @MainActor
     func updateHydrantRecommendations(
         incidentCoordinate: CLLocationCoordinate2D,

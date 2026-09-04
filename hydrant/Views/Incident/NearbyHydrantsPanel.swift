@@ -32,6 +32,10 @@ struct NearbyHydrantsPanel: View {
         mapViewModel.displayedRecommendations
     }
 
+    private var fireStationRecommendations: [FireStationRecommendation] {
+        mapViewModel.fireStationRecommendations
+    }
+
     private var currentRecommendation: HydrantRecommendation? {
         guard !recommendations.isEmpty,
               recommendations.indices.contains(currentIndex)
@@ -57,6 +61,10 @@ struct NearbyHydrantsPanel: View {
                 } else if selectedHydrant?.id == rec.hydrant.id {
                     compactHydrantDetails(for: rec)
                 }
+            }
+
+            if !fireStationRecommendations.isEmpty {
+                fireStationSection
             }
         }
         .padding(.horizontal, 20)
@@ -318,6 +326,65 @@ struct NearbyHydrantsPanel: View {
             }
             .padding(.top, 4)
         }
+    }
+
+    // Nearest fire stations (Pos Damkar) to the incident, shown alongside the
+    // hydrant recommendations so an officer can also dispatch a nearby post.
+    private var fireStationSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider()
+                .padding(.vertical, 2)
+
+            Label("Pos Damkar Terdekat", systemImage: "building.2.fill")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.secondary)
+
+            ForEach(fireStationRecommendations) { recommendation in
+                fireStationRow(for: recommendation)
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private func fireStationRow(
+        for recommendation: FireStationRecommendation
+    ) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "flame.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(recommendation.station.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text("\(DistanceFormatting.distance(recommendation.incidentDistance)) dari insiden")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                MapsNavigationService.openDirections(to: recommendation.station)
+            } label: {
+                Image(systemName: "location.fill")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(.orange, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Navigasi ke \(recommendation.station.title)")
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(
+            .thinMaterial,
+            in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+        )
     }
 
     private func detailRow(
